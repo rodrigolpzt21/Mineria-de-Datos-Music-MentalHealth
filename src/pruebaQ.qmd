@@ -1,0 +1,140 @@
+---
+title: "Datos prueba"
+format: html
+editor: visual
+---
+
+```{r}
+library(dplyr)
+library(caret)
+```
+
+
+
+```{r}
+datos <- read.csv("../data/musicData.csv")
+head(datos)
+```
+
+Veamos con detalle las variables y su tipología:
+```{r}
+dim(datos)
+```
+```{r}
+str(datos)
+```
+
+```{r}
+table(datos$Primary.streaming.service, useNA = 'always')
+# Avergiuar que es ese vacío con observación y seguramente agrupar ese vacío con otros 
+# Pasar a factor.
+# Más adelante, sobre train, estudiar su unificar las categorías Pandroa y Otros.
+```
+```{r}
+table(datos$While.working, useNA = 'always')
+# pasar a factor
+```
+
+```{r}
+table(datos$Composer, useNA = 'always')
+# pasar a factor
+```
+
+```{r}
+table(datos$Instrumentalist, useNA = 'always')
+# pasar a factor
+```
+
+```{r}
+table(datos$Fav.genre, useNA = 'always')
+# pasar a factor
+# seguramente agrupar
+```
+
+```{r}
+table(datos$Exploratory, useNA = 'always')
+# pasar a factor
+```
+
+```{r}
+table(datos$Foreign.languages, useNA = 'always')
+# pasar a factor
+```
+
+```{r}
+table(datos$Frequency..Jazz, useNA = 'always')
+# pasar a factor
+```
+
+Guardamos todas las variables categóricas como factor
+```{r}
+datos2 <- datos %>% mutate_if(is.character, as.factor)
+```
+
+Comprobamos
+```{r}
+str(datos2)
+```
+Hacemos summary global
+```{r}
+summary(datos2)
+```
+
+```{r}
+summary(datos)
+library(summarytools)
+print(dfSummary(datos),method = "render")
+```
+
+##Descripcción de las variables
+
+## Partición de los datos
+Dada la cantidad de datos decidimos realizar una partición train (0.8·65)-test (0.8·0.35) -validación (0.2).
+```{r}
+set.seed(154684)
+idx_tt_val <- createDataPartition(datos$Music.effects,p = 0.8)
+```
+
+Conjunto train-test (hay que volver a dividirlo)
+```{r}
+datos_tt <- datos[idx_tt_val$Resample1,]
+dim(datos_tt)
+```
+Volvemos a dividir train-test
+```{r}
+set.seed(154684)
+idx_tt <- createDataPartition(datos_tt$Music.effects,p = 0.65)
+```
+
+```{r}
+datos_train <- datos_tt[idx_tt$Resample1,]
+dim(datos_train)
+
+datos_test <- datos_tt[-idx_tt$Resample1,]
+dim(datos_test)
+```
+
+
+Conjunto de validación NO LO USAMOS NUNCA MÁS HASTA EL FINAL DEL TODO DEL PROYECTO:
+```{r}
+datos_val <- datos[-idx_tt_val$Resample1,]
+dim(datos_val)
+```
+
+
+
+##Análisis exploratorio de datos
+¿Que pregunts tengo sobre mis datos?¿que objetivos tengo?
+
+  *  Diferencias hombres y mujeres
+  * Que género de música es el más habitual y el menos?
+  * etc
+  
+SOLO TRABAJAMOS SOBRE TRAIN
+
+###Responder preguntas
+```{r}
+table(datos$Fav.genre)
+plot(datos$Age,datos$Hours.per.day)
+legend('topright',legend=levels(datos$Fav.genre),col=1:3)
+```
