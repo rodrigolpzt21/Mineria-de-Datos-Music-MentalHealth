@@ -1,6 +1,20 @@
 ---
-title: "Datos prueba"
-format: html
+title: "Datos Prueba"
+subtitle: "Análisis exploratorio y modelado de datos"
+author: "Carolina,Maria,Rodrigo"
+date: today
+date-format: "DD [de] MMMM [de] YYYY"
+lang: es
+format:
+  html:
+    theme: cosmo
+    toc: true
+    toc-title: "Contenido del informe"
+    toc-depth: 3
+    code-fold: true
+    code-copy: true
+    embed-resources: true
+    number-sections: true
 editor: visual
 ---
 
@@ -30,7 +44,7 @@ table(datos$Primary.streaming.service, useNA = 'always')
 # Pasar a factor.
 # Más adelante, sobre train, estudiar su unificar las categorías Pandroa y Otros.
 ```
-
+Tras revisar los datos hay una entrada que está en blanco (y ns porque no detecta como N/A), dos opciones eliminar la entrada o poner que no usa?.Entrada 199
 ```{r}
 table(datos$While.working, useNA = 'always')
 # pasar a factor
@@ -51,7 +65,7 @@ table(datos$Fav.genre, useNA = 'always')
 # pasar a factor
 # seguramente agrupar
 ```
-
+Tras un primer vistazo, quizá podamos agrupar generos de música que consideremos similar o poner un baremo y unir en una variable del estilo "otros generos" a todo féneor que no tenga al menos 25 entradas (Gospel,Latin,Lofi,Rap y Jazz)
 ```{r}
 table(datos$Exploratory, useNA = 'always')
 # pasar a factor
@@ -84,7 +98,9 @@ Hacemos summary global
 ```{r}
 summary(datos2)
 ```
-
+Viendo este summary encontramos otros huecos en blanco en las entradas filas (59,428,563)
+También ocurre lo mismo en instrumentalist(225,410,563,574) y composer(563).
+También en foreign language(237,398,563,668)y music effect (2,3,163,170,340,443,534,563)
 ```{r}
 summary(datos)
 library(summarytools)
@@ -92,6 +108,22 @@ print(dfSummary(datos),method = "render")
 ```
 
 ##Descripcción de las variables
+La variable timestamp es cuando se entregó el formulario
+La variable edad es la edad del individuo
+Primary streaming service el servicio de escucha de música que usan 
+hours per day es las horas de media que escuchan música al día
+BPM son los beats por minuto del género favorito
+Variable binarias: 
+- while working, que describe si escuchan o no música en el trabajo
+-Instrumentalist,composer si tocan o componen musica
+-Exploratory si la persona suele probar generos nuevos
+-Foreign language si escuchan música en idiomas que no manejan
+-Permiso de uso de datos (todos han dado que si )
+Variables categoricas:
+-Fav Genre su genero de música favorito 
+-Frequencys de distintos generos (describe que tan usualmente escucha cada persona el género correspondiente)
+-Depresion,OCD , insomnia, anxiety : auto evaluación del 1 al 10
+-Music effects : mejora o empeora con efectos de la música
 
 ## Partición de los datos
 
@@ -130,14 +162,19 @@ Conjunto de validación NO LO USAMOS NUNCA MÁS HASTA EL FINAL DEL TODO DEL PROY
 datos_val <- datos[-idx_tt_val$Resample1,]
 dim(datos_val)
 ```
-
+SOLO TRABAJAMOS SOBRE TRAIN
 ##Análisis exploratorio de datos ¿Que pregunts tengo sobre mis datos?¿que objetivos tengo?
 
-- Diferencias hombres y mujeres
-- Que género de música es el más habitual y el menos?
-- etc
+- ¿Diferencia hombres y mujeres? No es posible pues no consideramos el genero solo la edad, pero si podríamos explorar si hay diferencias en grupos de edades
+- Que género de música es el más habitual y el menos? El más habitual es el rock y el que menos el latin
 
-SOLO TRABAJAMOS SOBRE TRAIN
+Tras haber analizado y transformado los datos a factor, hay que tomar algunas decisiones y hay propuestas que se nos han ocurrido:
+ * Que hacer con las entradas con datos faltantes? (Debemos quitarlos desde el csv/excel o con R, o quizá podemos simular que rellenamos algunos)
+ * Si juntamos generos de música fav con pocas entradas, hay que ver como tratar sus variables de frecuencia para el resto, ya que estamos agrupando unas categorías que tienen relacionadas una variable cada una
+ * Hay 5 posibles variables de salida por lo que vimos el otro día en clase, los 4 self-report (que quizá podríamos fusionar en una variable y aportar pesos según la gravedad) y la de mejora. Dos posibles enfoques a seguir.
+
+
+
 
 ###Responder preguntas
 
