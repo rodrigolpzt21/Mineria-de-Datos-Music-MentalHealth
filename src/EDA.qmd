@@ -20,7 +20,7 @@ edito: visual
 
 ## Descripción y procedencia de los datos
 
-La base de datos la hemos sacado de la web de kaggle <https://www.kaggle.com/code/melissamonfared/multivariate-patterns-in-music-and-mental-health/input>. Los datos proceden de encuestas de google forms, tras la difusión de la encuesta en redes sociales como discord o reddit, sin limitarlo a edad o localización, rellenados por diversas personas, las cuales han dado su consentimiento al uso de los datos.
+La base de datos la hemos sacado de la web de kaggle <https://www.kaggle.com/code/melissamonfared/multivariate-patterns-in-music-and-mental-health/input>. Los datos proceden de encuestas de google forms, tras la difusión de la encuesta en redes sociales como discord o reddit, sin limitarlo a edad o localización. El formulario ha sido contestado por 736 personas, las cuales han dado su consentimiento al uso de los datos.
 
 Variables de los datos en bruto antes de trabajar y depurar:
 
@@ -60,19 +60,15 @@ Variables de los datos en bruto antes de trabajar y depurar:
 
 -Permisos: variable binaria de si la persona da permiso para usar los datos. 
 
-## Running Code
-
-When you click the **Render** button a document will be generated that includes both content and the output of embedded code. You can embed code like this:
-
-```{r}
-1 + 1
-```
-
-You can add options to executable code like this
+##Planteamiento inicial del EDA
+Antes de iniciar el análisis, modificamos los nombres de las variables al español y de forma simplificada para poder llamarlos. 
 
 ```{r}
-#| echo: false
-2 * 2
+#Código de Carolina
 ```
+Presentar un esquema o plan inicial de cómo se va a abordar
+la exploración de los datos y qué aspectos se considera necesario investigar.
+Aquí vamos poniendo lo que vamos a ir haciendo
+##Preguntas de partida
+##Proceso de exploración
 
-The `echo: false` option disables the printing of code (only output is displayed).
