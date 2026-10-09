@@ -1,0 +1,78 @@
+---
+title: "Analisis Exploratorio de Datos"
+subtitle: "Primera entrega minería de datos"
+author: "Carolina,María,Rodrigo"
+date: today
+date-format: "DD [de] MMMM [de] YYYY"
+lang: es
+format:
+  html:
+    theme: cosmo
+    toc: true
+    toc-title: "Contenido del informe"
+    toc-depth: 3
+    code-fold: true
+    code-copy: true
+    embed-resources: true
+    number-sections: true
+edito: visual
+---
+
+## Descripción y procedencia de los datos
+
+La base de datos la hemos sacado de la web de kaggle <https://www.kaggle.com/code/melissamonfared/multivariate-patterns-in-music-and-mental-health/input>. Los datos proceden de encuestas de google forms, tras la difusión de la encuesta en redes sociales como discord o reddit, sin limitarlo a edad o localización, rellenados por diversas personas, las cuales han dado su consentimiento al uso de los datos.
+
+Variables de los datos en bruto antes de trabajar y depurar:
+
+- Fecha: Variable de fecha en la que se entregó el formulario.
+
+- Edad: Variable de la edad de la persona que responde el formulario.
+
+- Plataforma: variable categórica del servicio utilizado para escuchar música.
+
+-Horas_pd: variable del número de horas que escuchan música diariamente.
+
+-Trabajando: variable binaria de la escucha de música durante el trabajo.
+
+-Instrumentista: variable binaria de si tocan algún instrumento.
+
+-Musico: variable binaria de si la persona compone música.
+
+-Genero_fav: variable categórica  nominal sobre el genero favorito de música.
+
+-Explorador: variable binaria que describe si la persona suele probar música de artistas o géneros nuevos o si se queda en un mismo nicho.
+
+-Extrangero: variable binaria que describe si la persona escucha música en idiomas no maternos.
+
+-BPM: variable que describe las pulsaciones por minuto del género de música favorito escogido.
+
+-f_genero: son variables categóricas ordinales que describen que tan frecuentemente escucha la persona el género de esa variable. Hay tantas variables como géneros ofrecidos dentro de la variable genero_fav.
+
+-Ansiedad: varibale ordinal entre 0 y 10 que describe como uno se autopercibe el tener ansiedad.
+
+-Depresion: varibale ordinal entre 0 y 10 que describe como uno se autopercibe el tener depresión.
+
+-Insomnio: varibale ordinal entre 0 y 10 que describe como uno se autopercibe el tener insomnio.
+
+-OCD: varibale ordinal entre 0 y 10 que describe como uno se autopercibe el tener OCD (transtorno obsesivo compulsivo).
+
+-Efectos: variable categórica que describe si la música ha mejorado, empeorado o no tenido efecto en la persona.
+
+-Permisos: variable binaria de si la persona da permiso para usar los datos. 
+
+## Running Code
+
+When you click the **Render** button a document will be generated that includes both content and the output of embedded code. You can embed code like this:
+
+```{r}
+1 + 1
+```
+
+You can add options to executable code like this
+
+```{r}
+#| echo: false
+2 * 2
+```
+
+The `echo: false` option disables the printing of code (only output is displayed).
