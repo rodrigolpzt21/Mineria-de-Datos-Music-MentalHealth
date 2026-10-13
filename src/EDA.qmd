@@ -65,8 +65,11 @@ Antes de iniciar el análisis, modificamos los nombres de las variables al espa�
 
 ```{r}
 datos <- read.csv("../data/musicData.csv")
+#Eliminamos la primera y la última columna antes de cambiarles el nombre ya que las consideramos irrelevantes
+
+datos <- datos[, -c(1, ncol(datos))]
 # Cambia todas las columnas de golpe basándose en su posición exacta
-colnames(datos) <- c("feha", "edad", "plataforma", "horas_pd", "trabajando", "instrumentista", "musico", "genero_fav", "explorador", "extranjero", "bpm", "f_clasica", "f_country", "f_edm", "f_folk", "f_gospel", "f_hiphop", "f_jazz", "f_kpop", "f_latin", "f_lofi", "f_metal","f_pop", "f_r&b", "f_rap", "f_rock", "f_vgm", "ansiedad", "depresion", "insomnio", "ocd","efectos","permisos")
+colnames(datos) <- c("edad", "plataforma", "horas_pd", "trabajando", "instrumentista", "musico", "genero_fav", "explorador", "extranjero", "bpm", "f_clasica", "f_country", "f_edm", "f_folk", "f_gospel", "f_hiphop", "f_jazz", "f_kpop", "f_latin", "f_lofi", "f_metal","f_pop", "f_r&b", "f_rap", "f_rock", "f_vgm", "ansiedad", "depresion", "insomnio", "ocd","efectos")
 head(datos)
 ```
 
