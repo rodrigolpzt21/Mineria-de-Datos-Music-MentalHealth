@@ -165,3 +165,12 @@ table(datos$Fav.genre)
 plot(datos$Age,datos$Hours.per.day)
 legend('topright',legend=levels(datos$Fav.genre),col=1:3)
 ```
+
+```{r}
+datos_modificados <- datos %>%
+  rename(
+    Timestamp = fecha,
+    Age = edad,
+    Primary streaming service= Genero
+  )
+```
