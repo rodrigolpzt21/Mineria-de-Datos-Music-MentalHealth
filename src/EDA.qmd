@@ -48,13 +48,13 @@ Variables de los datos en bruto antes de trabajar y depurar:
 
 -f_genero: son variables categóricas ordinales que describen que tan frecuentemente escucha la persona el género de esa variable. Hay tantas variables como géneros ofrecidos dentro de la variable genero_fav.
 
--Ansiedad: varibale ordinal entre 0 y 10 que describe como uno se autopercibe el tener ansiedad.
+-Ansiedad: variable categórica ordinal entre 0 y 10 que describe como uno se autopercibe el tener ansiedad.
 
--Depresion: varibale ordinal entre 0 y 10 que describe como uno se autopercibe el tener depresión.
+-Depresion: variable categórica ordinal entre 0 y 10 que describe como uno se autopercibe el tener depresión.
 
--Insomnio: varibale ordinal entre 0 y 10 que describe como uno se autopercibe el tener insomnio.
+-Insomnio: variable categórica ordinal entre 0 y 10 que describe como uno se autopercibe el tener insomnio.
 
--OCD: varibale ordinal entre 0 y 10 que describe la autopercepción de tener OCD (transtorno obsesivo compulsivo).
+-OCD: varibale categórica ordinal entre 0 y 10 que describe la autopercepción de tener OCD (transtorno obsesivo compulsivo).
 
 -Efectos: variable categórica que describe si la música ha mejorado, empeorado o no tenido efecto en la persona.
 
@@ -64,13 +64,8 @@ Variables de los datos en bruto antes de trabajar y depurar:
 Antes de iniciar el análisis, modificamos los nombres de las variables al español y de forma simplificada para poder llamarlos. 
 
 ```{r}
-datos <- read.csv("../data/musicData.csv")
-#Eliminamos la primera y la última columna antes de cambiarles el nombre ya que las consideramos irrelevantes
-
-datos <- datos[, -c(1, ncol(datos))]
-# Cambia todas las columnas de golpe basándose en su posición exacta
-colnames(datos) <- c("edad", "plataforma", "horas_pd", "trabajando", "instrumentista", "musico", "genero_fav", "explorador", "extranjero", "bpm", "f_clasica", "f_country", "f_edm", "f_folk", "f_gospel", "f_hiphop", "f_jazz", "f_kpop", "f_latin", "f_lofi", "f_metal","f_pop", "f_r&b", "f_rap", "f_rock", "f_vgm", "ansiedad", "depresion", "insomnio", "ocd","efectos")
-head(datos)
+datos <- read.csv("../data/musicData.csv",na.strings = c("", " ", "NA", "NaN"))
+colnames(datos) <- c("fecha","edad", "plataforma", "horas_pd", "trabajando", "instrumentista", "musico", "genero_fav", "explorador", "extranjero", "bpm", "f_clasica", "f_country", "f_edm", "f_folk", "f_gospel", "f_hiphop", "f_jazz", "f_kpop", "f_latin", "f_lofi", "f_metal","f_pop", "f_ryb", "f_rap", "f_rock", "f_vgm", "ansiedad", "depresion", "insomnio", "ocd","efectos","permisos")
 ```
 
 Presentar un esquema o plan inicial de cómo se va a abordar
@@ -78,4 +73,261 @@ la exploración de los datos y qué aspectos se considera necesario investigar.
 Aquí vamos poniendo lo que vamos a ir haciendo
 ##Preguntas de partida
 ##Proceso de exploración
+Tras haber renombrado las variables procedemos a realizar el proceso de exploración de nuestros datos.
+Empezamos importando algunas librerías que utilizaremos y viendo la dimensión de nuestros datos
+```{r}
+library(dplyr)
+library(caret)
+dim(datos)
+head(datos)
+```
 
+Podemos observar que tenemos 736 entradas, que representan la respuesta al formulario de 736 personas, con un total de 33 variables (descritas previamente). Vamos a entrar en detalle para conocer mejor nuestros datos. 
+
+```{r}
+str(datos)
+```
+Podemos observar que hay unos vacios en los datos, que debemos investigar. Ejemplo de ello en el str, es en efectos, que tenemos las dos primeras entradas vacias (NA).
+
+Vamos a ir revisando las variables una a una
+Fecha: Observamos que cada persona tiene una fecha distinta, sumado a que por el contexto de nuestra investigación, la fecha de entrega del formulario no va a tener relevancia en los resultados, por lo que podemos concluir que esta variable es una candidata a ser eliminada.
+```{r}
+table(datos$fecha, useNA = 'always')
+
+```
+Variable edad: 
+En edad vemos que tenemos un valor N/A, por lo demás tenemos diversas edades comprendidas entre 10 y 89 años, con una media de 25,2 años y una mediana de 21 años. 
+```{r}
+table(datos$edad, useNA = 'always')
+media_edad <- mean(datos$edad, na.rm = TRUE)
+mediana_edad<- median(datos$edad, na.rm = TRUE)
+print(media_edad)
+print(mediana_edad)
+edad_maxima <- max(datos$edad, na.rm = TRUE)
+print(edad_maxima)
+edad_min <- min(datos$edad, na.rm = TRUE)
+print(edad_min)
+```
+Variable : vemos que hay un valor no rellenado NA, como esta es una variable categórica y habrá otras similares, vamos a transformarlas a tipo factor.
+```{r}
+table(datos$plataforma, useNA = 'always')
+```
+Pasamos así todas nuestras variables que tengan caracteres a factor.
+```{r}
+datos2 <- datos %>% mutate_if(is.character, as.factor)
+```
+
+Variable horas_pd: 
+Tenemos diversas cantidades de horas comprendidas entre 0 y 24 horas, con una media de 3,57 horas y una mediana de 3 horas. 
+```{r}
+table(datos2$horas_pd, useNA = 'always')
+media_horas <- mean(datos2$horas_pd, na.rm = TRUE)
+mediana_horas<- median(datos2$horas_pd, na.rm = TRUE)
+print(media_horas)
+print(mediana_horas)
+horas_maxima <- max(datos2$horas_pd, na.rm = TRUE)
+print(horas_maxima)
+horas_min <- min(datos2$horas_pd, na.rm = TRUE)
+print(horas_min)
+```
+Variables trabajando, instrumentista y musico: 
+Vemos que en 4 de estas 5 variables que se pueden tratar como binarias al ser si o no, tenemos algunos datos faltantes como NA.
+```{r}
+print("Variable trabajando:")
+table(datos2$trabajando, useNA = 'always')
+print("Variable instrumentista:")
+table(datos2$instrumentista, useNA = 'always')
+print("Variable musico:")
+table(datos2$musico, useNA = 'always')
+print("Variable explorador:")
+table(datos2$explorador, useNA = 'always')
+print("Variable extranjero:")
+table(datos2$extranjero, useNA = 'always')
+```
+Variable genero_fav:
+Vemos que tenemos 16 opciones para esta variable categórica, pero nos llama la atención que hay ciertos géneros de música que son el favorito de poca gente, lo que puede hacer que al dividir la muestra en tres para hacer el estudio, no nos aporten significativamente, por lo que posteriormente agruparemos los géneros que tengan menos de 20 elegidos en una categoría que llamaremos "Otros géneros". 
+```{r}
+table(datos2$genero_fav, useNA = 'always')
+```
+Variable bpm: 
+Tenemos que los bpm van comprendidos desde 0 hasta 999999999, con media 1589948 y mediana 120. Esta diferencia entre la media y la mediana se debe a que tenemos valores muy bajos entre 0 y 100 y luego algunos valores más altos como 624 o 999999999, lo que hace que al haber tal diferencia de magnitud esos valores más separados tengan mayor carga en la media y quizá se deba a algún error en los datos, que tocará analizar. También por el contexto de nuestros datos debemos plantearnos la relevancia de esta variable para nuestro estudio ya que no tenemos claro que sea relevante. También llama la atención que tenemos muchos datos faltantes en bpm lo cual favorece que podamos eliminar esta variable ya que tenemos una gran falta de datos.
+```{r}
+table(datos2$bpm, useNA = 'always')
+media_bpm <- mean(datos2$bpm, na.rm = TRUE)
+mediana_bpm<- median(datos2$bpm, na.rm = TRUE)
+cat("La media es", media_bpm, "\n")
+cat("La mediana es",mediana_bpm, "\n")
+bpm_maxima <- max(datos2$bpm, na.rm = TRUE)
+cat("El máximo es",bpm_maxima,"\n")
+bpm_min <- min(datos2$bpm, na.rm = TRUE)
+cat("El mínimo es",bpm_min,"\n")
+```
+Variables frecuencias: 
+Tenemos este conjunto de variables categóricas ordinales y tras ver los tables parece que no tenemos huecos faltantes y está todo en orden. 
+
+```{r}
+print("Variable f_clasica:")
+table(datos2$f_clasica, useNA = 'always')
+print("Variable f_country:")
+table(datos2$f_country, useNA = 'always')
+print("Variable f_edm:")
+table(datos2$f_edm, useNA = 'always')
+print("Variable f_folk")
+table(datos2$f_folk, useNA = 'always')
+print("Variable f_gospel:")
+table(datos2$f_gospel, useNA = 'always')
+print("Variable f_hiphop:")
+table(datos2$f_hiphop, useNA = 'always')
+print("Variable f_jazz:")
+table(datos2$f_jazz, useNA = 'always')
+print("Variable f_kpop:")
+table(datos2$f_kpop, useNA = 'always')
+print("Variable f_latin:")
+table(datos2$f_latin, useNA = 'always')
+print("Variable f_lofi:")
+table(datos2$f_lofi, useNA = 'always')
+print("Variable f_metal:")
+table(datos2$f_metal, useNA = 'always')
+print("Variable f_pop:")
+table(datos2$f_pop, useNA = 'always')
+print("Variable f_ryb:")
+table(datos2$f_ryb, useNA = 'always')
+print("Variable f_rap:")
+table(datos2$f_rap, useNA = 'always')
+print("Variable f_rock:")
+table(datos2$f_rock, useNA = 'always')
+print("Variable f_vgm:")
+table(datos2$f_vgm, useNA = 'always')
+```
+Variable ansiedad: 
+```{r}
+table(datos2$ansiedad, useNA = 'always')
+media_ansiedad <- mean(datos2$ansiedad, na.rm = TRUE)
+mediana_ansiedad<- median(datos2$ansiedad, na.rm = TRUE)
+cat("La media es", media_ansiedad, "\n")
+cat("La mediana es",mediana_ansiedad, "\n")
+```
+Variable depresion: 
+```{r}
+table(datos2$depresion, useNA = 'always')
+media_depresion <- mean(datos2$depresion, na.rm = TRUE)
+mediana_depresion<- median(datos2$depresion, na.rm = TRUE)
+cat("La media es", media_depresion, "\n")
+cat("La mediana es",mediana_depresion, "\n")
+```
+Variable insomnio: 
+```{r}
+table(datos2$insomnio, useNA = 'always')
+media_insomnio <- mean(datos2$insomnio, na.rm = TRUE)
+mediana_insomnio<- median(datos2$insomnio, na.rm = TRUE)
+cat("La media es", media_insomnio, "\n")
+cat("La mediana es",mediana_insomnio, "\n")
+```
+Variable ocd: 
+```{r}
+table(datos2$ocd, useNA = 'always')
+media_ocd <- mean(datos2$ocd, na.rm = TRUE)
+mediana_ocd<- median(datos2$ocd, na.rm = TRUE)
+cat("La media es", media_ocd, "\n")
+cat("La mediana es",mediana_ocd, "\n")
+```
+Variable efectos:
+Como vimos al inicio en esta variable tenemos huecos extraños que nos tocará ver como tratar, en esta caso tenemos 8 vacios que no son reconocidos tampoco como NA.
+```{r}
+table(datos2$efectos, useNA = 'always')
+```
+Variable permisos: 
+En esta variable todos tuvieron que decir que si para dar su consentimiento al uso de los datos, por lo que procederemos a eliminarla posteriormente
+```{r}
+table(datos2$permisos, useNA = 'always')
+```
+Procedemos a arregar los huecos faltantes utilizando tecnicas de imputación de los datos con la librería mice
+Para ello previamente vamos a eliminar variables que por nuestra exploración, no nos aportan.
+```{r}
+head(datos2)
+#Eliminamos la primera y la última columna 
+datos3 <- datos2[, -c(1, ncol(datos2))]
+#Eliminamos bpm
+datos3 <- datos3 %>% 
+  select(-bpm)
+head(datos3)
+```
+
+```{r}
+library(mice)
+imp <- mice(datos3, m = 20, method = "cart", maxit = 10, seed = 123)
+datos_imputados <- complete(imp, 1)
+
+```
+
+Ahora veamos un resumen global de los datos imputados. 
+```{r}
+summary(datos_imputados)
+library(summarytools)
+print(dfSummary(datos_imputados),method = "render")
+```
+
+Ahora miremos algunos gráficos para seguir explorando los datos.
+Matriz de correlaciones
+```{r}
+#Matriz de correlaciones
+#Seleccionamos las variables numéricas
+vars_numericas <- datos_imputados[, sapply(datos_imputados, is.numeric)]
+
+#Cálculo de la matriz de correlación
+matriz_cor <- round(cor(vars_numericas, use = "complete.obs"), 2)
+print(matriz_cor)
+library(corrplot)
+corrplot(matriz_cor, method = "color", type = "upper", 
+         tl.col = "black", tl.srt = 45, addCoef.col = "black")
+```
+Diagramas de cajas para comparar datos de generos favoritos con la autopercepción de los problemas mentales
+```{r}
+#Diagrama de cajas 
+ggplot(datos_imputados, aes(x = genero_fav, y = depresion, fill = genero_fav)) +
+  geom_boxplot() +
+  labs(title = "Diagrama de Cajas de depresion según genero_fav",
+       x = "Genero_fav",
+       y = "depresion") +
+  theme_minimal() +
+  theme(legend.position = "none")
+
+#Diagrama de cajas 
+ggplot(datos_imputados, aes(x = genero_fav, y = ansiedad, fill = genero_fav)) +
+  geom_boxplot() +
+  labs(title = "Diagrama de Cajas de ansiedad según genero_fav",
+       x = "Genero_fav",
+       y = "ansiedad") +
+  theme_minimal() +
+  theme(legend.position = "none")
+#Diagrama de cajas 
+ggplot(datos_imputados, aes(x = genero_fav, y = ocd, fill = genero_fav)) +
+  geom_boxplot() +
+  labs(title = "Diagrama de Cajas de ocd según genero_fav",
+       x = "Genero_fav",
+       y = "ocd") +
+  theme_minimal() +
+  theme(legend.position = "none")
+#Diagrama de cajas 
+ggplot(datos_imputados, aes(x = genero_fav, y = insomnio, fill = genero_fav)) +
+  geom_boxplot() +
+  labs(title = "Diagrama de Cajas de insomnio según genero_fav",
+       x = "Genero_fav",
+       y = "insomnio") +
+  theme_minimal() +
+  theme(legend.position = "none")
+
+```
+
+Diagrama de cajas para ver la relación de efectos con el uso de la música
+```{r}
+#Diagrama de cajas 
+ggplot(datos_imputados, aes(x = efectos, y = horas_pd, fill = efectos)) +
+  geom_boxplot() +
+  labs(title = "Diagrama de Cajas de horas según efecto",
+       x = "efecto",
+       y = "horas") +
+  theme_minimal() +
+  theme(legend.position = "none")
+
+```
