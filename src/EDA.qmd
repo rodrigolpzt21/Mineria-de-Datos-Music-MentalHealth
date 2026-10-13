@@ -54,7 +54,7 @@ Variables de los datos en bruto antes de trabajar y depurar:
 
 -Insomnio: varibale ordinal entre 0 y 10 que describe como uno se autopercibe el tener insomnio.
 
--OCD: varibale ordinal entre 0 y 10 que describe como uno se autopercibe el tener OCD (transtorno obsesivo compulsivo).
+-OCD: varibale ordinal entre 0 y 10 que describe la autopercepción de tener OCD (transtorno obsesivo compulsivo).
 
 -Efectos: variable categórica que describe si la música ha mejorado, empeorado o no tenido efecto en la persona.
 
