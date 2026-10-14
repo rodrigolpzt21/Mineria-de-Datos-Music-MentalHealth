@@ -42,7 +42,7 @@ Variables de los datos en bruto antes de trabajar y depurar:
 
 -Explorador: variable binaria que describe si la persona suele probar música de artistas o géneros nuevos o si se queda en un mismo nicho.
 
--Extrangero: variable binaria que describe si la persona escucha música en idiomas no maternos.
+-Extranjero: variable binaria que describe si la persona escucha música en idiomas no maternos.
 
 -BPM: variable que describe las pulsaciones por minuto del género de música favorito escogido.
 
@@ -72,6 +72,10 @@ Presentar un esquema o plan inicial de cómo se va a abordar
 la exploración de los datos y qué aspectos se considera necesario investigar.
 Aquí vamos poniendo lo que vamos a ir haciendo
 ##Preguntas de partida
+¿Existe alguna relación entre grupos de edades y el padecimiento de alguna enfermedad mental?¿Predomina alguna edad con algún tipo de enfermedad mental?
+¿Qué género de música es el más habitual? ¿Y el que menos?
+¿Existe algún género musical que tenga efecto positivo en alguna de las enfermedades mentales?
+¿Cuáles son los géneros más/menos escuchados entre la gente con depresión/ansiedad/ocd/insomnia?
 ##Proceso de exploración
 Tras haber renombrado las variables procedemos a realizar el proceso de exploración de nuestros datos.
 Empezamos importando algunas librerías que utilizaremos y viendo la dimensión de nuestros datos
@@ -241,9 +245,12 @@ En esta variable todos tuvieron que decir que si para dar su consentimiento al u
 ```{r}
 table(datos2$permisos, useNA = 'always')
 ```
-Procedemos a arregar los huecos faltantes utilizando tecnicas de imputación de los datos con la librería mice
-Para ello previamente vamos a eliminar variables que por nuestra exploración, no nos aportan.
+Procedemos a arreglar los huecos faltantes utilizando tecnicas de imputación de los datos con la librería mice
+Para ello previamente vamos a eliminar variables que por nuestra exploración, no nos aportan, junto con la agrupación de algunos géneros en "Otros géneros" ya que por el número de datos del estudio serán insignificantes.
 ```{r}
+library(forcats) #Quiero modificar algo dentro de una columna de tipo factor
+datos2$genero_fav<-fct_collapse(datos2$genero_fav,"Otros géneros"=c("Gospel","Latin", "Lofi"))
+table(datos2$genero_fav,useNA = 'always')
 head(datos2)
 #Eliminamos la primera y la última columna 
 datos3 <- datos2[, -c(1, ncol(datos2))]
