@@ -16,91 +16,159 @@ format:
     embed-resources: true
     number-sections: true
 edito: visual
+editor: 
+  markdown: 
+    wrap: 72
 ---
+
+## Introducción
+
+La música lleva siglos formando parte de nuestras vidas, habiendo tenido
+un gran impacto en nuestra sociedad nunca nos hemos preguntado cómo nos
+habrá hecho cambiar la mentalidad. A continuación, realizaremos un
+trabajo sobre el vínculo que existe entre la música y la salud mental,
+para ello se han tomado cuatro enfermedades mentales (depresión,
+ansiedad, OCD e insomnio) y distintos géneros de música para obtener un
+conjunto de datos.
+
+Como objetivo de este proyecto buscamos hacer un modelo que prediga la
+efectividad de la música en estos trastornos, es decir, si se ha
+observado alguna mejoría en su diagnóstico. Para ello, hemos elaborado
+primeramente un análisis exploratorio en el que depuraremos y
+estudiaremos los datos.
 
 ## Descripción y procedencia de los datos
 
-La base de datos la hemos sacado de la web de kaggle <https://www.kaggle.com/code/melissamonfared/multivariate-patterns-in-music-and-mental-health/input>. Los datos proceden de encuestas de google forms, tras la difusión de la encuesta en redes sociales como discord o reddit, sin limitarlo a edad o localización. El formulario ha sido contestado por 736 personas, las cuales han dado su consentimiento al uso de los datos.
+La base de datos la hemos sacado de la web de kaggle
+<https://www.kaggle.com/code/melissamonfared/multivariate-patterns-in-music-and-mental-health/input>.
+Los datos proceden de encuestas de google forms, tras la difusión de la
+encuesta en redes sociales como discord o reddit, sin limitarlo a edad o
+localización. El formulario ha sido contestado por 736 personas, las
+cuales han dado su consentimiento al uso de los datos.
 
 Variables de los datos en bruto antes de trabajar y depurar:
 
-- Fecha: Variable de fecha en la que se entregó el formulario.
+- Fecha: variable de fecha en la que se entregó el formulario.
 
-- Edad: Variable de la edad de la persona que responde el formulario.
+- Edad: variable de la edad de la persona que responde el formulario.
 
-- Plataforma: variable categórica del servicio utilizado para escuchar música.
+- Plataforma: variable categórica del servicio utilizado para escuchar
+  música.
 
--Horas_pd: variable del número de horas que escuchan música diariamente.
+- Horas_pd: variable del número de horas que escuchan música
+  diariamente.
 
--Trabajando: variable binaria de la escucha de música durante el trabajo.
+- Trabajando: variable binaria de la escucha de música durante el
+  trabajo.
 
--Instrumentista: variable binaria de si tocan algún instrumento.
+- Instrumentista: variable binaria de si tocan algún instrumento.
 
--Musico: variable binaria de si la persona compone música.
+- Músico: variable binaria de si la persona compone música.
 
--Genero_fav: variable categórica  nominal sobre el genero favorito de música.
+- Genero_fav: variable categórica nominal sobre el genero favorito de
+  música.
 
--Explorador: variable binaria que describe si la persona suele probar música de artistas o géneros nuevos o si se queda en un mismo nicho.
+- Explorador: variable binaria que describe si la persona suele probar
+  música de artistas o géneros nuevos o si se queda en un mismo nicho.
 
--Extranjero: variable binaria que describe si la persona escucha música en idiomas no maternos.
+- Extranjero: variable binaria que describe si la persona escucha música
+  en idiomas no maternos.
 
--BPM: variable que describe las pulsaciones por minuto del género de música favorito escogido.
+- BPM: variable que describe las pulsaciones por minuto del género de
+  música favorito escogido.
 
--f_genero: son variables categóricas ordinales que describen que tan frecuentemente escucha la persona el género de esa variable. Hay tantas variables como géneros ofrecidos dentro de la variable genero_fav.
+- f_genero: son variables categóricas ordinales que describen que tan
+  frecuentemente escucha la persona el género de esa variable. Hay
+  tantas variables como géneros ofrecidos dentro de la variable
+  genero_fav.
 
--Ansiedad: variable categórica ordinal entre 0 y 10 que describe como uno se autopercibe el tener ansiedad.
+- Ansiedad: variable categórica ordinal entre 0 y 10 que describe como
+  uno se autopercibe el tener ansiedad.
 
--Depresion: variable categórica ordinal entre 0 y 10 que describe como uno se autopercibe el tener depresión.
+- Depresion: variable categórica ordinal entre 0 y 10 que describe como
+  uno se autopercibe el tener depresión.
 
--Insomnio: variable categórica ordinal entre 0 y 10 que describe como uno se autopercibe el tener insomnio.
+- Insomnio: variable categórica ordinal entre 0 y 10 que describe como
+  uno se autopercibe el tener insomnio.
 
--OCD: varibale categórica ordinal entre 0 y 10 que describe la autopercepción de tener OCD (transtorno obsesivo compulsivo).
+- OCD: varibale categórica ordinal entre 0 y 10 que describe la
+  autopercepción de tener OCD (transtorno obsesivo compulsivo).
 
--Efectos: variable categórica que describe si la música ha mejorado, empeorado o no tenido efecto en la persona.
+- Efectos: variable categórica que describe si la música ha mejorado,
+  empeorado o no tenido efecto en la persona.
 
--Permisos: variable binaria de si la persona da permiso para usar los datos. 
+- Permisos: variable binaria de si la persona da permiso para usar los
+  datos.
 
-##Planteamiento inicial del EDA
-Antes de iniciar el análisis, modificamos los nombres de las variables al español y de forma simplificada para poder llamarlos. 
+## Planteamiento inicial del EDA
+
+Antes de iniciar el análisis, modificamos los nombres de las variables
+al español y de forma simplificada para poder llamarlos.
 
 ```{r}
 datos <- read.csv("../data/musicData.csv",na.strings = c("", " ", "NA", "NaN"))
 colnames(datos) <- c("fecha","edad", "plataforma", "horas_pd", "trabajando", "instrumentista", "musico", "genero_fav", "explorador", "extranjero", "bpm", "f_clasica", "f_country", "f_edm", "f_folk", "f_gospel", "f_hiphop", "f_jazz", "f_kpop", "f_latin", "f_lofi", "f_metal","f_pop", "f_ryb", "f_rap", "f_rock", "f_vgm", "ansiedad", "depresion", "insomnio", "ocd","efectos","permisos")
 ```
 
-Presentar un esquema o plan inicial de cómo se va a abordar
-la exploración de los datos y qué aspectos se considera necesario investigar.
-Aquí vamos poniendo lo que vamos a ir haciendo
-##Preguntas de partida
-¿Existe alguna relación entre grupos de edades y el padecimiento de alguna enfermedad mental?¿Predomina alguna edad con algún tipo de enfermedad mental?
-¿Qué género de música es el más habitual? ¿Y el que menos?
-¿Existe algún género musical que tenga efecto positivo en alguna de las enfermedades mentales?
-¿Cuáles son los géneros más/menos escuchados entre la gente con depresión/ansiedad/ocd/insomnia?
-##Proceso de exploración
-Tras haber renombrado las variables procedemos a realizar el proceso de exploración de nuestros datos.
-Empezamos importando algunas librerías que utilizaremos y viendo la dimensión de nuestros datos
+Presentar un esquema o plan inicial de cómo se va a abordar la
+exploración de los datos y qué aspectos se considera necesario
+investigar. Aquí vamos poniendo lo que vamos a ir haciendo
+
+## Preguntas de partida
+
+¿Existe alguna relación entre grupos de edades y el padecimiento de
+alguna enfermedad mental?¿Predomina alguna edad con algún tipo de
+enfermedad mental? ¿Qué género de música es el más habitual? ¿Y el que
+menos? ¿Existe algún género musical que tenga efecto positivo en alguna
+de las enfermedades mentales? ¿Cuáles son los géneros más/menos
+escuchados entre la gente con depresión/ansiedad/ocd/insomnia?
+
+## Proceso de exploración
+
+Tras haber renombrado las variables procedemos a realizar el proceso de
+exploración de nuestros datos. Empezamos importando algunas librerías
+que utilizaremos y viendo la dimensión de nuestros datos
+
 ```{r}
 library(dplyr)
 library(caret)
+library(mice)
+library(forcats)
+library(summarytools)
+library(corrplot)
 dim(datos)
 head(datos)
 ```
 
-Podemos observar que tenemos 736 entradas, que representan la respuesta al formulario de 736 personas, con un total de 33 variables (descritas previamente). Vamos a entrar en detalle para conocer mejor nuestros datos. 
+Podemos observar que tenemos 736 entradas, que representan la respuesta
+al formulario de 736 personas, con un total de 33 variables (descritas
+previamente). Vamos a entrar en detalle para conocer mejor nuestros
+datos.
 
 ```{r}
 str(datos)
 ```
-Podemos observar que hay unos vacios en los datos, que debemos investigar. Ejemplo de ello en el str, es en efectos, que tenemos las dos primeras entradas vacias (NA).
+
+Podemos observar que hay unos vacios en los datos, que debemos
+investigar. Ejemplo de ello en el str, es en efectos, que tenemos las
+dos primeras entradas vacias (NA).
 
 Vamos a ir revisando las variables una a una
-Fecha: Observamos que cada persona tiene una fecha distinta, sumado a que por el contexto de nuestra investigación, la fecha de entrega del formulario no va a tener relevancia en los resultados, por lo que podemos concluir que esta variable es una candidata a ser eliminada.
+
+Fecha: Observamos que cada persona tiene una fecha distinta, sumado a
+que por el contexto de nuestra investigación, la fecha de entrega del
+formulario no va a tener relevancia en los resultados, por lo que
+podemos concluir que esta variable es una candidata a ser eliminada.
+
 ```{r}
 table(datos$fecha, useNA = 'always')
 
 ```
-Variable edad: 
-En edad vemos que tenemos un valor N/A, por lo demás tenemos diversas edades comprendidas entre 10 y 89 años, con una media de 25,2 años y una mediana de 21 años. 
+
+Variable edad: En edad vemos que tenemos un valor N/A, por lo demás
+tenemos diversas edades comprendidas entre 10 y 89 años, con una media
+de 25,2 años y una mediana de 21 años.
+
 ```{r}
 table(datos$edad, useNA = 'always')
 media_edad <- mean(datos$edad, na.rm = TRUE)
@@ -112,17 +180,31 @@ print(edad_maxima)
 edad_min <- min(datos$edad, na.rm = TRUE)
 print(edad_min)
 ```
-Variable : vemos que hay un valor no rellenado NA, como esta es una variable categórica y habrá otras similares, vamos a transformarlas a tipo factor.
+
+Variable plataforma: vemos que hay un valor no rellenado NA, como esta
+es una variable categórica y habrá otras similares, vamos a
+transformarlas a tipo factor.
+
 ```{r}
 table(datos$plataforma, useNA = 'always')
 ```
-Pasamos así todas nuestras variables que tengan caracteres a factor.
+
+Pasamos así todas nuestras variables que tengan caracteres a factor
+nominal para distinguir los diferentes grupos de cada variable. En
+particular, las columnas que contengan las frecuencias de escucha de
+cada género musical pasarán a ser ordinales para poder distinguir la
+jerarquía de los valores tomados.
+
 ```{r}
-datos2 <- datos %>% mutate_if(is.character, as.factor)
+datos2 <- datos %>% mutate_if(is.character, as.factor)  %>% 
+    mutate(across(contains("f_"), 
+    ~ factor(.x, levels = c("Never", "Rarely", "Sometimes", "Very     frequently"), ordered = TRUE)))
 ```
 
-Variable horas_pd: 
-Tenemos diversas cantidades de horas comprendidas entre 0 y 24 horas, con una media de 3,57 horas y una mediana de 3 horas. 
+Variable horas_pd: Tenemos diversas cantidades de horas comprendidas
+entre 0 y 24 horas, con una media de 3,57 horas y una mediana de 3
+horas.
+
 ```{r}
 table(datos2$horas_pd, useNA = 'always')
 media_horas <- mean(datos2$horas_pd, na.rm = TRUE)
@@ -134,8 +216,11 @@ print(horas_maxima)
 horas_min <- min(datos2$horas_pd, na.rm = TRUE)
 print(horas_min)
 ```
-Variables trabajando, instrumentista y musico: 
-Vemos que en 4 de estas 5 variables que se pueden tratar como binarias al ser si o no, tenemos algunos datos faltantes como NA.
+
+Variables trabajando, instrumentista y musico: Vemos que en 4 de estas 5
+variables que se pueden tratar como binarias al ser si o no, tenemos
+algunos datos faltantes como NA.
+
 ```{r}
 print("Variable trabajando:")
 table(datos2$trabajando, useNA = 'always')
@@ -148,13 +233,31 @@ table(datos2$explorador, useNA = 'always')
 print("Variable extranjero:")
 table(datos2$extranjero, useNA = 'always')
 ```
-Variable genero_fav:
-Vemos que tenemos 16 opciones para esta variable categórica, pero nos llama la atención que hay ciertos géneros de música que son el favorito de poca gente, lo que puede hacer que al dividir la muestra en tres para hacer el estudio, no nos aporten significativamente, por lo que posteriormente agruparemos los géneros que tengan menos de 20 elegidos en una categoría que llamaremos "Otros géneros". 
+
+Variable genero_fav: Vemos que tenemos 16 opciones para esta variable
+categórica, pero nos llama la atención que hay ciertos géneros de música
+que son el favorito de poca gente, lo que puede hacer que al dividir la
+muestra en tres para hacer el estudio, no nos aporten
+significativamente, por lo que posteriormente agruparemos los géneros
+que tengan menos de 20 elegidos en una categoría que llamaremos "Otros
+géneros".
+
 ```{r}
 table(datos2$genero_fav, useNA = 'always')
 ```
-Variable bpm: 
-Tenemos que los bpm van comprendidos desde 0 hasta 999999999, con media 1589948 y mediana 120. Esta diferencia entre la media y la mediana se debe a que tenemos valores muy bajos entre 0 y 100 y luego algunos valores más altos como 624 o 999999999, lo que hace que al haber tal diferencia de magnitud esos valores más separados tengan mayor carga en la media y quizá se deba a algún error en los datos, que tocará analizar. También por el contexto de nuestros datos debemos plantearnos la relevancia de esta variable para nuestro estudio ya que no tenemos claro que sea relevante. También llama la atención que tenemos muchos datos faltantes en bpm lo cual favorece que podamos eliminar esta variable ya que tenemos una gran falta de datos.
+
+Variable bpm: Tenemos que los bpm van comprendidos desde 0 hasta
+999999999, con media 1589948 y mediana 120. Esta diferencia entre la
+media y la mediana se debe a que tenemos valores muy bajos entre 0 y 100
+y luego algunos valores más altos como 624 o 999999999, lo que hace que
+al haber tal diferencia de magnitud esos valores más separados tengan
+mayor carga en la media y quizá se deba a algún error en los datos, que
+tocará analizar. También por el contexto de nuestros datos debemos
+plantearnos la relevancia de esta variable para nuestro estudio ya que
+no tenemos claro que sea relevante. También llama la atención que
+tenemos muchos datos faltantes en bpm lo cual favorece que podamos
+eliminar esta variable ya que tenemos una gran falta de datos.
+
 ```{r}
 table(datos2$bpm, useNA = 'always')
 media_bpm <- mean(datos2$bpm, na.rm = TRUE)
@@ -166,8 +269,10 @@ cat("El máximo es",bpm_maxima,"\n")
 bpm_min <- min(datos2$bpm, na.rm = TRUE)
 cat("El mínimo es",bpm_min,"\n")
 ```
-Variables frecuencias: 
-Tenemos este conjunto de variables categóricas ordinales y tras ver los tables parece que no tenemos huecos faltantes y está todo en orden. 
+
+Variables frecuencias: Tenemos este conjunto de variables categóricas
+ordinales y tras ver los tables parece que no tenemos huecos faltantes y
+está todo en orden.
 
 ```{r}
 print("Variable f_clasica:")
@@ -203,7 +308,9 @@ table(datos2$f_rock, useNA = 'always')
 print("Variable f_vgm:")
 table(datos2$f_vgm, useNA = 'always')
 ```
-Variable ansiedad: 
+
+Variable ansiedad:
+
 ```{r}
 table(datos2$ansiedad, useNA = 'always')
 media_ansiedad <- mean(datos2$ansiedad, na.rm = TRUE)
@@ -211,7 +318,9 @@ mediana_ansiedad<- median(datos2$ansiedad, na.rm = TRUE)
 cat("La media es", media_ansiedad, "\n")
 cat("La mediana es",mediana_ansiedad, "\n")
 ```
-Variable depresion: 
+
+Variable depresion:
+
 ```{r}
 table(datos2$depresion, useNA = 'always')
 media_depresion <- mean(datos2$depresion, na.rm = TRUE)
@@ -219,7 +328,9 @@ mediana_depresion<- median(datos2$depresion, na.rm = TRUE)
 cat("La media es", media_depresion, "\n")
 cat("La mediana es",mediana_depresion, "\n")
 ```
-Variable insomnio: 
+
+Variable insomnio:
+
 ```{r}
 table(datos2$insomnio, useNA = 'always')
 media_insomnio <- mean(datos2$insomnio, na.rm = TRUE)
@@ -227,7 +338,9 @@ mediana_insomnio<- median(datos2$insomnio, na.rm = TRUE)
 cat("La media es", media_insomnio, "\n")
 cat("La mediana es",mediana_insomnio, "\n")
 ```
-Variable ocd: 
+
+Variable ocd:
+
 ```{r}
 table(datos2$ocd, useNA = 'always')
 media_ocd <- mean(datos2$ocd, na.rm = TRUE)
@@ -235,20 +348,31 @@ mediana_ocd<- median(datos2$ocd, na.rm = TRUE)
 cat("La media es", media_ocd, "\n")
 cat("La mediana es",mediana_ocd, "\n")
 ```
-Variable efectos:
-Como vimos al inicio en esta variable tenemos huecos extraños que nos tocará ver como tratar, en esta caso tenemos 8 vacios que no son reconocidos tampoco como NA.
+
+Variable efectos: Como vimos al inicio en esta variable tenemos huecos
+extraños que nos tocará ver como tratar, en esta caso tenemos 8 vacios
+que no son reconocidos tampoco como NA.
+
 ```{r}
 table(datos2$efectos, useNA = 'always')
 ```
-Variable permisos: 
-En esta variable todos tuvieron que decir que si para dar su consentimiento al uso de los datos, por lo que procederemos a eliminarla posteriormente
+
+Variable permisos: En esta variable todos tuvieron que decir que si para
+dar su consentimiento al uso de los datos, por lo que procederemos a
+eliminarla posteriormente
+
 ```{r}
 table(datos2$permisos, useNA = 'always')
 ```
-Procedemos a arreglar los huecos faltantes utilizando tecnicas de imputación de los datos con la librería mice
-Para ello previamente vamos a eliminar variables que por nuestra exploración, no nos aportan, junto con la agrupación de algunos géneros en "Otros géneros" ya que por el número de datos del estudio serán insignificantes.
+
+Procedemos a arreglar los huecos faltantes utilizando tecnicas de
+imputación de los datos con la librería mice. Para ello previamente
+vamos a eliminar variables que por nuestra exploración, no nos aportan,
+junto con la agrupación de algunos géneros en "Otros géneros" ya que por
+el número de datos del estudio serán insignificantes.
+
 ```{r}
-library(forcats) #Quiero modificar algo dentro de una columna de tipo factor
+#Quiero modificar algo dentro de una columna de tipo factor
 datos2$genero_fav<-fct_collapse(datos2$genero_fav,"Otros géneros"=c("Gospel","Latin", "Lofi"))
 table(datos2$genero_fav,useNA = 'always')
 head(datos2)
@@ -261,21 +385,21 @@ head(datos3)
 ```
 
 ```{r}
-library(mice)
 imp <- mice(datos3, m = 20, method = "cart", maxit = 10, seed = 123)
 datos_imputados <- complete(imp, 1)
 
 ```
 
-Ahora veamos un resumen global de los datos imputados. 
+Ahora veamos un resumen global de los datos imputados.
+
 ```{r}
 summary(datos_imputados)
-library(summarytools)
 print(dfSummary(datos_imputados),method = "render")
 ```
 
-Ahora miremos algunos gráficos para seguir explorando los datos.
-Matriz de correlaciones
+Ahora miremos algunos gráficos para seguir explorando los datos. Matriz
+de correlaciones
+
 ```{r}
 #Matriz de correlaciones
 #Seleccionamos las variables numéricas
@@ -284,11 +408,13 @@ vars_numericas <- datos_imputados[, sapply(datos_imputados, is.numeric)]
 #Cálculo de la matriz de correlación
 matriz_cor <- round(cor(vars_numericas, use = "complete.obs"), 2)
 print(matriz_cor)
-library(corrplot)
 corrplot(matriz_cor, method = "color", type = "upper", 
          tl.col = "black", tl.srt = 45, addCoef.col = "black")
 ```
-Diagramas de cajas para comparar datos de generos favoritos con la autopercepción de los problemas mentales
+
+Diagramas de cajas para comparar datos de generos favoritos con la
+autopercepción de los problemas mentales
+
 ```{r}
 #Diagrama de cajas 
 ggplot(datos_imputados, aes(x = genero_fav, y = depresion, fill = genero_fav)) +
@@ -326,7 +452,9 @@ ggplot(datos_imputados, aes(x = genero_fav, y = insomnio, fill = genero_fav)) +
 
 ```
 
-Diagrama de cajas para ver la relación de efectos con el uso de la música
+Diagrama de cajas para ver la relación de efectos con el uso de la
+música
+
 ```{r}
 #Diagrama de cajas 
 ggplot(datos_imputados, aes(x = efectos, y = horas_pd, fill = efectos)) +
@@ -338,3 +466,9 @@ ggplot(datos_imputados, aes(x = efectos, y = horas_pd, fill = efectos)) +
   theme(legend.position = "none")
 
 ```
+
+Una vez se tiene una exploración global de los datos, comenzaremos a
+enfocar nuestro estudio en la predicción que buscamos analizar. En
+primer lugar, observamos que pueden existir variables que no nos
+proporcionen información al *target* como sería la plataforma e incluso
+el género favorito u horas de escucha.
