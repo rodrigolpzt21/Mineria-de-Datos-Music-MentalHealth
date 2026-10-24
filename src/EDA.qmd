@@ -33,9 +33,9 @@ conjunto de datos.
 
 Como objetivo de este proyecto buscamos hacer un modelo que prediga la
 efectividad de la música en estos trastornos, es decir, si se ha
-observado alguna mejoría en su diagnóstico. Para ello, hemos elaborado
-primeramente un análisis exploratorio en el que depuraremos y
-estudiaremos los datos.
+observado alguna mejoría en el diagnóstico del paciente según sus gustos
+musicales . Para ello, hemos elaborado primeramente un análisis
+exploratorio en el que depuraremos y estudiaremos los datos.
 
 ## Descripción y procedencia de los datos
 
@@ -132,6 +132,7 @@ que utilizaremos y viendo la dimensión de nuestros datos
 ```{r}
 library(dplyr)
 library(caret)
+library(tidyr)
 library(mice)
 library(forcats)
 library(summarytools)
@@ -466,6 +467,104 @@ ggplot(datos_imputados, aes(x = efectos, y = horas_pd, fill = efectos)) +
   theme(legend.position = "none")
 
 ```
+
+Por otro lado podremos comenzar a estudiar algunas de las preguntas hechas al comienzo del trabajo:
+
+## - ¿Existe alguna relación entre grupos de edades y el padecimiento de alguna enfermedad mental?
+
+Para ello primero agruparemos por edad de 10 en diez a los participante, observamos que la gran mayoría se encuentra entre los 10 y 30 años mientras que a no hay apenas encuestados a partir de los 60 años. 
+
+```{r}
+datosAgrupEdad<-datos_imputados %>% mutate(GrupoEdad=
+                                    cut(edad,breaks=seq(10,90,by=10), right=FALSE))
+table(datosAgrupEdad$GrupoEdad)
+prop.table(table(datosAgrupEdad$GrupoEdad))
+
+```
+Por lo que decidiremos agrupar los datos de las personas con edad de sesenta en adelante para que así sea más significativo en nuestro estudio
+```{r}
+datosEdad<-datos_imputados %>% mutate(GrupoEdad=case_when(
+  
+  edad>=10 & edad<20 ~ "[10,20)",
+  edad>=20 & edad<30 ~ "[20,30)",
+  edad>=30 & edad<40 ~ "[30,40)",
+  edad>=40 & edad<50 ~ "[40,50)",
+  edad>=50 & edad<60 ~ "[50,60)",
+  edad>=60  ~ "60 o más",
+  TRUE~NA_character_
+  ))
+
+table(datosEdad$GrupoEdad)
+prop.table(table(datosEdad$GrupoEdad))
+
+print("Ansiedad")
+table(datosEdad$GrupoEdad,datosEdad$ansiedad)
+prop.table(table(datosEdad$GrupoEdad,datosEdad$ansiedad),margin=1)*100
+print("Depresion")
+table(datosEdad$GrupoEdad,datosEdad$depresion)
+print("OCD")
+table(datosEdad$GrupoEdad,datosEdad$ocd)
+print("Insomnio")
+table(datosEdad$GrupoEdad,datosEdad$insomnio)
+
+
+datosEdad %>% group_by(GrupoEdad)%>% summarise(
+  n=n(),
+  Ansiedad=mean(ansiedad,na.rm=TRUE),
+  Depresion=mean(depresion,na.rm=TRUE),
+  OCD=mean(ocd,na.rm=TRUE),
+  Insomnio=mean(insomnio,na.rm=TRUE)
+)
+ggplot(datosEdad,aes(x=GrupoEdad,y=ansiedad))+geom_boxplot()+labs(
+  title="Ansiedad por grupos de edad",
+  x="Grupos de edad",
+  y="Escala de autoevaluacion de ansiedad"
+)
+ggplot(datosEdad,aes(x=GrupoEdad,y=depresion))+geom_boxplot()+labs(
+  title="Depresion por grupos de edad",
+  x="Grupos de edad",
+  y="Escala de autoevaluacion de depresion"
+)
+ggplot(datosEdad,aes(x=GrupoEdad,y=ocd))+geom_boxplot()+labs(
+  title="OCD por grupos de edad",
+  x="Grupos de edad",
+  y="Escala de autoevaluacion de ocd"
+)
+ggplot(datosEdad,aes(x=GrupoEdad,y=insomnio))+geom_boxplot()+labs(
+  title="Insomnio por grupos de edad",
+  x="Grupos de edad",
+  y="Escala de autoevaluacion de insomnio"
+)
+
+datosdensidad <- datosEdad %>%
+  pivot_longer(
+    cols = c(ansiedad, depresion, ocd, insomnio),
+    names_to = "Trastorno",
+    values_to = "Escala de autoevaluacion"
+  )
+
+ggplot(datosdensidad, aes(x = `Escala de autoevaluacion`, colour = Trastorno, fill = Trastorno)) +
+  geom_density(alpha = 0.2, na.rm = TRUE) +
+  facet_wrap(~ GrupoEdad) +
+  labs(
+    title = "Distribución de problemas de salud mental por grupo de edad",
+    x = "Escala de autoevaluacion",
+    y = "Densidad",
+    colour = "Variable",
+    fill = "Variable"
+  ) +
+  theme_minimal()
+
+```
+A partir de los gráficos proporcionados podemos 
+
+## - ¿Predomina alguna edad con algún tipo de enfermedad mental?
+
+## - ¿Qué género de música es el más habitual? ¿Y el que menos?
+
+## - ¿Existe algún género musical que tenga efecto positivo en alguna de las enfermedades mentales? 
+
+## - ¿Cuáles son los géneros más/menos escuchados entre la gente con depresión/ansiedad/ocd/insomnia?
 
 Una vez se tiene una exploración global de los datos, comenzaremos a
 enfocar nuestro estudio en la predicción que buscamos analizar. En
