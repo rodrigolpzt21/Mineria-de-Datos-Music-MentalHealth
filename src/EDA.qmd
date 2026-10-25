@@ -34,7 +34,7 @@ conjunto de datos.
 Como objetivo de este proyecto buscamos hacer un modelo que prediga la
 efectividad de la música en estos trastornos, es decir, si se ha
 observado alguna mejoría en el diagnóstico del paciente según sus gustos
-musicales . Para ello, hemos elaborado primeramente un análisis
+musicales. Para ello, hemos elaborado primeramente un análisis
 exploratorio en el que depuraremos y estudiaremos los datos.
 
 ## Descripción y procedencia de los datos
@@ -101,12 +101,26 @@ Variables de los datos en bruto antes de trabajar y depurar:
   datos.
 
 ## Planteamiento inicial del EDA
+Empezamos leyendo los datos y cargando todas las librerias que vamos a usar a lo largo del EDA. 
+```{r}
+library(dplyr)
+library(caret)
+library(tidyr)
+library(mice)
+library(forcats)
+library(summarytools)
+library(corrplot)
+library(visdat) #para datos faltantes
+library(naniar) ## gg_mis_var
+library(FSelector) #ver el valor que aporta bpm
+library(recipes) #arbol de imputación con guardado
+datos <- read.csv("../data/musicData.csv",na.strings = c("", " ", "NA", "NaN"))
+```
 
 Antes de iniciar el análisis, modificamos los nombres de las variables
 al español y de forma simplificada para poder llamarlos.
 
 ```{r}
-datos <- read.csv("../data/musicData.csv",na.strings = c("", " ", "NA", "NaN"))
 colnames(datos) <- c("fecha","edad", "plataforma", "horas_pd", "trabajando", "instrumentista", "musico", "genero_fav", "explorador", "extranjero", "bpm", "f_clasica", "f_country", "f_edm", "f_folk", "f_gospel", "f_hiphop", "f_jazz", "f_kpop", "f_latin", "f_lofi", "f_metal","f_pop", "f_ryb", "f_rap", "f_rock", "f_vgm", "ansiedad", "depresion", "insomnio", "ocd","efectos","permisos")
 ```
 
@@ -118,8 +132,12 @@ investigar. Aquí vamos poniendo lo que vamos a ir haciendo
 
 ¿Existe alguna relación entre grupos de edades y el padecimiento de
 alguna enfermedad mental?¿Predomina alguna edad con algún tipo de
-enfermedad mental? ¿Qué género de música es el más habitual? ¿Y el que
-menos? ¿Existe algún género musical que tenga efecto positivo en alguna
+enfermedad mental?
+
+¿Qué género de música es el más habitual? ¿Y el que
+menos? 
+
+¿Existe algún género musical que tenga efecto positivo en alguna
 de las enfermedades mentales? ¿Cuáles son los géneros más/menos
 escuchados entre la gente con depresión/ansiedad/ocd/insomnia?
 
@@ -130,13 +148,6 @@ exploración de nuestros datos. Empezamos importando algunas librerías
 que utilizaremos y viendo la dimensión de nuestros datos
 
 ```{r}
-library(dplyr)
-library(caret)
-library(tidyr)
-library(mice)
-library(forcats)
-library(summarytools)
-library(corrplot)
 dim(datos)
 head(datos)
 ```
@@ -182,9 +193,8 @@ edad_min <- min(datos$edad, na.rm = TRUE)
 print(edad_min)
 ```
 
-Variable plataforma: vemos que hay un valor no rellenado NA, como esta
-es una variable categórica y habrá otras similares, vamos a
-transformarlas a tipo factor.
+Variable plataforma: vemos que hay un valor no rellenado NA.
+Por otro lado, podemos ver que esta varible es de tipo categórico y cuyas entradas son del tipo character, para evitarnos problemas, vamos a transformarla a tipo factor.
 
 ```{r}
 table(datos$plataforma, useNA = 'always')
@@ -197,9 +207,9 @@ cada género musical pasarán a ser ordinales para poder distinguir la
 jerarquía de los valores tomados.
 
 ```{r}
-datos2 <- datos %>% mutate_if(is.character, as.factor)  %>% 
+datos_factor <- datos %>% mutate_if(is.character, as.factor)  %>% 
     mutate(across(contains("f_"), 
-    ~ factor(.x, levels = c("Never", "Rarely", "Sometimes", "Very     frequently"), ordered = TRUE)))
+    ~ factor(.x, levels = c("Never", "Rarely", "Sometimes", "Very frequently"), ordered = TRUE)))
 ```
 
 Variable horas_pd: Tenemos diversas cantidades de horas comprendidas
@@ -207,14 +217,14 @@ entre 0 y 24 horas, con una media de 3,57 horas y una mediana de 3
 horas.
 
 ```{r}
-table(datos2$horas_pd, useNA = 'always')
-media_horas <- mean(datos2$horas_pd, na.rm = TRUE)
-mediana_horas<- median(datos2$horas_pd, na.rm = TRUE)
+table(datos_factor$horas_pd, useNA = 'always')
+media_horas <- mean(datos_factor$horas_pd, na.rm = TRUE)
+mediana_horas<- median(datos_factor$horas_pd, na.rm = TRUE)
 print(media_horas)
 print(mediana_horas)
-horas_maxima <- max(datos2$horas_pd, na.rm = TRUE)
+horas_maxima <- max(datos_factor$horas_pd, na.rm = TRUE)
 print(horas_maxima)
-horas_min <- min(datos2$horas_pd, na.rm = TRUE)
+horas_min <- min(datos_factor$horas_pd, na.rm = TRUE)
 print(horas_min)
 ```
 
@@ -224,15 +234,15 @@ algunos datos faltantes como NA.
 
 ```{r}
 print("Variable trabajando:")
-table(datos2$trabajando, useNA = 'always')
+table(datos_factor$trabajando, useNA = 'always')
 print("Variable instrumentista:")
-table(datos2$instrumentista, useNA = 'always')
+table(datos_factor$instrumentista, useNA = 'always')
 print("Variable musico:")
-table(datos2$musico, useNA = 'always')
+table(datos_factor$musico, useNA = 'always')
 print("Variable explorador:")
-table(datos2$explorador, useNA = 'always')
+table(datos_factor$explorador, useNA = 'always')
 print("Variable extranjero:")
-table(datos2$extranjero, useNA = 'always')
+table(datos_factor$extranjero, useNA = 'always')
 ```
 
 Variable genero_fav: Vemos que tenemos 16 opciones para esta variable
@@ -244,7 +254,7 @@ que tengan menos de 20 elegidos en una categoría que llamaremos "Otros
 géneros".
 
 ```{r}
-table(datos2$genero_fav, useNA = 'always')
+table(datos_factor$genero_fav, useNA = 'always')
 ```
 
 Variable bpm: Tenemos que los bpm van comprendidos desde 0 hasta
@@ -253,21 +263,24 @@ media y la mediana se debe a que tenemos valores muy bajos entre 0 y 100
 y luego algunos valores más altos como 624 o 999999999, lo que hace que
 al haber tal diferencia de magnitud esos valores más separados tengan
 mayor carga en la media y quizá se deba a algún error en los datos, que
-tocará analizar. También por el contexto de nuestros datos debemos
-plantearnos la relevancia de esta variable para nuestro estudio ya que
-no tenemos claro que sea relevante. También llama la atención que
-tenemos muchos datos faltantes en bpm lo cual favorece que podamos
-eliminar esta variable ya que tenemos una gran falta de datos.
+tocará analizar. 
+Además, por el contexto de nuestros datos debemos plantearnos la relevancia de 
+esta variable para nuestro estudio ya que no tenemos claro que sea relevante. 
+
+También llama la atención que tenemos muchos datos faltantes en bpm, lo que
+aumenta nuestra desconfianza en esta variable. Posteriormente continuaremos el
+análisis sobre esta variable para determinar si la mantenemos o eliminamos de 
+nuestro estudio.
 
 ```{r}
-table(datos2$bpm, useNA = 'always')
-media_bpm <- mean(datos2$bpm, na.rm = TRUE)
-mediana_bpm<- median(datos2$bpm, na.rm = TRUE)
+table(datos_factor$bpm, useNA = 'always')
+media_bpm <- mean(datos_factor$bpm, na.rm = TRUE)
+mediana_bpm<- median(datos_factor$bpm, na.rm = TRUE)
 cat("La media es", media_bpm, "\n")
 cat("La mediana es",mediana_bpm, "\n")
-bpm_maxima <- max(datos2$bpm, na.rm = TRUE)
+bpm_maxima <- max(datos_factor$bpm, na.rm = TRUE)
 cat("El máximo es",bpm_maxima,"\n")
-bpm_min <- min(datos2$bpm, na.rm = TRUE)
+bpm_min <- min(datos_factor$bpm, na.rm = TRUE)
 cat("El mínimo es",bpm_min,"\n")
 ```
 
@@ -277,45 +290,45 @@ está todo en orden.
 
 ```{r}
 print("Variable f_clasica:")
-table(datos2$f_clasica, useNA = 'always')
+table(datos_factor$f_clasica, useNA = 'always')
 print("Variable f_country:")
-table(datos2$f_country, useNA = 'always')
+table(datos_factor$f_country, useNA = 'always')
 print("Variable f_edm:")
-table(datos2$f_edm, useNA = 'always')
+table(datos_factor$f_edm, useNA = 'always')
 print("Variable f_folk")
-table(datos2$f_folk, useNA = 'always')
+table(datos_factor$f_folk, useNA = 'always')
 print("Variable f_gospel:")
-table(datos2$f_gospel, useNA = 'always')
+table(datos_factor$f_gospel, useNA = 'always')
 print("Variable f_hiphop:")
-table(datos2$f_hiphop, useNA = 'always')
+table(datos_factor$f_hiphop, useNA = 'always')
 print("Variable f_jazz:")
-table(datos2$f_jazz, useNA = 'always')
+table(datos_factor$f_jazz, useNA = 'always')
 print("Variable f_kpop:")
-table(datos2$f_kpop, useNA = 'always')
+table(datos_factor$f_kpop, useNA = 'always')
 print("Variable f_latin:")
-table(datos2$f_latin, useNA = 'always')
+table(datos_factor$f_latin, useNA = 'always')
 print("Variable f_lofi:")
-table(datos2$f_lofi, useNA = 'always')
+table(datos_factor$f_lofi, useNA = 'always')
 print("Variable f_metal:")
-table(datos2$f_metal, useNA = 'always')
+table(datos_factor$f_metal, useNA = 'always')
 print("Variable f_pop:")
-table(datos2$f_pop, useNA = 'always')
+table(datos_factor$f_pop, useNA = 'always')
 print("Variable f_ryb:")
-table(datos2$f_ryb, useNA = 'always')
+table(datos_factor$f_ryb, useNA = 'always')
 print("Variable f_rap:")
-table(datos2$f_rap, useNA = 'always')
+table(datos_factor$f_rap, useNA = 'always')
 print("Variable f_rock:")
-table(datos2$f_rock, useNA = 'always')
+table(datos_factor$f_rock, useNA = 'always')
 print("Variable f_vgm:")
-table(datos2$f_vgm, useNA = 'always')
+table(datos_factor$f_vgm, useNA = 'always')
 ```
 
 Variable ansiedad:
 
 ```{r}
-table(datos2$ansiedad, useNA = 'always')
-media_ansiedad <- mean(datos2$ansiedad, na.rm = TRUE)
-mediana_ansiedad<- median(datos2$ansiedad, na.rm = TRUE)
+table(datos_factor$ansiedad, useNA = 'always')
+media_ansiedad <- mean(datos_factor$ansiedad, na.rm = TRUE)
+mediana_ansiedad<- median(datos_factor$ansiedad, na.rm = TRUE)
 cat("La media es", media_ansiedad, "\n")
 cat("La mediana es",mediana_ansiedad, "\n")
 ```
@@ -323,9 +336,9 @@ cat("La mediana es",mediana_ansiedad, "\n")
 Variable depresion:
 
 ```{r}
-table(datos2$depresion, useNA = 'always')
-media_depresion <- mean(datos2$depresion, na.rm = TRUE)
-mediana_depresion<- median(datos2$depresion, na.rm = TRUE)
+table(datos_factor$depresion, useNA = 'always')
+media_depresion <- mean(datos_factor$depresion, na.rm = TRUE)
+mediana_depresion<- median(datos_factor$depresion, na.rm = TRUE)
 cat("La media es", media_depresion, "\n")
 cat("La mediana es",mediana_depresion, "\n")
 ```
@@ -333,9 +346,9 @@ cat("La mediana es",mediana_depresion, "\n")
 Variable insomnio:
 
 ```{r}
-table(datos2$insomnio, useNA = 'always')
-media_insomnio <- mean(datos2$insomnio, na.rm = TRUE)
-mediana_insomnio<- median(datos2$insomnio, na.rm = TRUE)
+table(datos_factor$insomnio, useNA = 'always')
+media_insomnio <- mean(datos_factor$insomnio, na.rm = TRUE)
+mediana_insomnio<- median(datos_factor$insomnio, na.rm = TRUE)
 cat("La media es", media_insomnio, "\n")
 cat("La mediana es",mediana_insomnio, "\n")
 ```
@@ -343,59 +356,214 @@ cat("La mediana es",mediana_insomnio, "\n")
 Variable ocd:
 
 ```{r}
-table(datos2$ocd, useNA = 'always')
-media_ocd <- mean(datos2$ocd, na.rm = TRUE)
-mediana_ocd<- median(datos2$ocd, na.rm = TRUE)
+table(datos_factor$ocd, useNA = 'always')
+media_ocd <- mean(datos_factor$ocd, na.rm = TRUE)
+mediana_ocd<- median(datos_factor$ocd, na.rm = TRUE)
 cat("La media es", media_ocd, "\n")
 cat("La mediana es",mediana_ocd, "\n")
 ```
 
-Variable efectos: Como vimos al inicio en esta variable tenemos huecos
-extraños que nos tocará ver como tratar, en esta caso tenemos 8 vacios
-que no son reconocidos tampoco como NA.
+Variable efectos: Como vimos al inicio en esta variable tenemos 8 NA, que nos
+tocará ver como tratar más adelante.
 
 ```{r}
-table(datos2$efectos, useNA = 'always')
+table(datos_factor$efectos, useNA = 'always')
 ```
 
-Variable permisos: En esta variable todos tuvieron que decir que si para
-dar su consentimiento al uso de los datos, por lo que procederemos a
-eliminarla posteriormente
+Variable permisos: Esta variable al representar el permiso de usar los datos del
+formulario, fuerza a que todas las respuestas sean que afirmativas, por lo que 
+procederemos a eliminarla posteriormente, pues es una clara candidata a ser 
+eliminada, pues no aportará tenerla en cuenta para nuestro proyecto.
 
 ```{r}
-table(datos2$permisos, useNA = 'always')
+table(datos_factor$permisos, useNA = 'always')
+```
+Ya hemos analizado nuestro conjunto de datos por encima, aunque tenemos algunas
+dudas sobre algunas variables candidatas a ser eliminadas, hay dos que son claras
+y que podemos eliminar antes de la partición de nuestros datos. Estas son la 
+fecha y la el consentimiento. También agruparemos algunas de nuestras categorias 
+de género favorito en otros géneros.
+```{r}
+#Agrupamos las categorías
+datos_factor$genero_fav<-fct_collapse(datos_factor$genero_fav,"Otros géneros"=c("Gospel","Latin", "Lofi"))
+table(datos_factor$genero_fav,useNA = 'always')
+head(datos_factor)
+#Eliminamos la primera y la última columna (fecha y consentimiento)
+datos_preparticion <- datos_factor[, -c(1, ncol(datos_factor))]
+head(datos_preparticion)
 ```
 
-Procedemos a arreglar los huecos faltantes utilizando tecnicas de
-imputación de los datos con la librería mice. Para ello previamente
-vamos a eliminar variables que por nuestra exploración, no nos aportan,
-junto con la agrupación de algunos géneros en "Otros géneros" ya que por
-el número de datos del estudio serán insignificantes.
+## Partición de los datos
+
+Dada la cantidad de datos decidimos realizar una partición train (0.8·65)-test (0.8·0.35) -validación (0.2).
 
 ```{r}
-#Quiero modificar algo dentro de una columna de tipo factor
-datos2$genero_fav<-fct_collapse(datos2$genero_fav,"Otros géneros"=c("Gospel","Latin", "Lofi"))
-table(datos2$genero_fav,useNA = 'always')
-head(datos2)
-#Eliminamos la primera y la última columna 
-datos3 <- datos2[, -c(1, ncol(datos2))]
+set.seed(154684)
+idx_tt_val <- createDataPartition(datos_preparticion$efectos,p = 0.8)
+```
+
+Conjunto train-test (hay que volver a dividirlo)
+
+```{r}
+datos_tt <- datos_preparticion[idx_tt_val$Resample1,]
+dim(datos_tt)
+```
+
+Volvemos a dividir train-test
+
+```{r}
+set.seed(154684)
+idx_tt <- createDataPartition(datos_tt$efectos,p = 0.65)
+```
+
+```{r}
+datos_train <- datos_tt[idx_tt$Resample1,]
+dim(datos_train)
+
+datos_test <- datos_tt[-idx_tt$Resample1,]
+dim(datos_test)
+```
+
+Conjunto de validación NO LO USAMOS NUNCA MÁS HASTA EL FINAL DEL TODO DEL PROYECTO:
+
+```{r}
+datos_val <- datos_preparticion[-idx_tt_val$Resample1,]
+dim(datos_val)
+```
+
+## Continuamos con el EDA
+
+Ahora ya solo continuaremos con el conjunto de entrenamiento datos_train
+
+En la primera parte del análisis, vimos que la variable bpm nos generaba dudas de
+su utilidad, por sus valores y por la gran cantidad de datos faltantes que tenía.
+Procedemos a analizar esta variable para determinar si queremos eliminarla o mantenerla. 
+```{r}
+vis_miss(datos_train)
+gg_miss_var(datos_train)
+```
+Como podemos observar el 13% de las respuestas de esa variable son un valor nulo.
+```{r}
+# Ver resumen estadístico básico (mínimo, máximo, cuartiles)
+summary(datos_train$bpm)
+# Contar valores en cada rango
+por_encima_220 <- sum(datos_train$bpm > 220, na.rm = TRUE)
+entre_40_y_220 <- sum(datos_train$bpm >= 40 & datos_train$bpm <= 220, na.rm = TRUE)
+por_debajo_40  <- sum(datos_train$bpm < 40, na.rm = TRUE)
+
+# Mostrar resultados
+cat("Mayores a 220 BPM:", por_encima_220, "\n")
+cat("Entre 40 y 220 BPM:", entre_40_y_220, "\n")
+cat("Menores a 40 BPM:", por_debajo_40, "\n")
+
+#Veamos la distribución escalando porque tenemos presencia de datos atípicos
+boxplot(datos_train$bpm, 
+        main = "Distribución de BPM", 
+        ylab = "BPM", 
+        ylim = c(0, 220), 
+        outline = FALSE)
+stripchart(datos_train$bpm, 
+           method = "jitter", 
+           vertical = TRUE, 
+           add = TRUE, 
+           pch = 19, 
+           col = rgb(0, 0, 1, 0.3))
+```
+Los valores típicos de bpm en la música oscilan habitualmente entre los 40 y los 220 bpm,
+pero podemos ver que tenemos 4 valores atípicos por debajo de 40 y 1 por encima
+de 220, además de tener en la partición 50 NA. 
+Claramente la media está siendo afectada por el valor atípico superior, pues es varias
+escalas por encima. 
+Vamos a transformar las entrafas atípicas en NA por ahora, considerando que se han 
+rellenado con desconocimiento, para poder analizar de forma más sencilla, si debemos 
+mantener o no la variable bpm. 
+```{r}
+#Convertimos en NA los valores fuera del rango normal
+datos_train$bpm[datos_train$bpm < 40 | datos_train$bpm > 220] <- NA
+summary(datos_train$bpm)
+#Vemos que porcentaje de NA queda en esa variable
+pct_na <- mean(is.na(datos_train$bpm)) * 100
+cat("Porcentaje de NAs:", round(pct_na, 2), "%\n")
+```
+Nos sale un porcentaje que puede ser bastante significativo, vamos a profundizar
+el análisis. Para ello vamos a ver un boxplot con efectos, hacer un anova y utilizar 
+métodos que nos digan la ganancia de información que aporta la variable. 
+```{r}
+#Comparar la distribución de BPM con la variable respuesta efecto
+boxplot(bpm ~ efectos, data = datos_train, 
+        main = "BPM vs efectos", 
+        col = c("lightblue", "orange"))
+# modelo ANOVA
+modelo_anova <- aov(bpm ~ efectos, data = datos_train)
+
+# Ver el resumen con el p-valor
+summary(modelo_anova)
+
+information.gain(efectos ~ bpm, data = datos_train)
+```
+Resultado boxplot: Vemos que tienen medianas similares,entorno a 120,en los tres 
+outputs de la variable respuesta, sumado a que parecen tener distribuciones similares,
+es el primer indicio de que no aporta mucho esta variable.
+
+Anova y test de aporte: al realizar un anova, nos da un p-valor muy alto de 0,87,
+por lo que no hay evidencia suficiente para rechazar la hipótesis nula y por tanto, 
+no hay diferencias significativas entre las medias de los grupos. Y encima el test de 
+importancia nos dice que a lo sumo aporta un 0,56% de la información en la variable respuesta.
+Lo que es despreciable.
+
+Por todos estos resultados junto con la gran cantidad de datos faltantes de esta variable,
+podemos concluir que eliminarla es la mejor opción por ahora.
+
+```{r}
 #Eliminamos bpm
-datos3 <- datos3 %>% 
+datos_train_limpios <- datos_train %>% 
   select(-bpm)
-head(datos3)
+head(datos_train_limpios)
 ```
 
-```{r}
-imp <- mice(datos3, m = 20, method = "cart", maxit = 10, seed = 123)
-datos_imputados <- complete(imp, 1)
+A continuación vamos a imputar los datos faltantes del resto de variables, para lo que
+usaremos arboles de regresión. Intentaremos guardar la forma de imputar los datos para cuando trabajemos 
+con los conjuntos de validación y test. 
 
+```{r}
+#Receta de imputación
+#Excluimos la variable objetivo
+predictores <- setdiff(names(datos_train_limpios), "efectos")
+# Crear receta
+receta <- recipe(~ ., data = datos_train_limpios[, predictores, drop = FALSE]) |>
+  step_impute_bag(extranjero,instrumentista,trabajando,plataforma, # variables a imputar
+                  trees = 25,seed_val = 123)
+
+#Aplicamos a train
+receta_entrenada <- prep(receta,training = datos_train_limpios[, predictores, drop = FALSE])
+
+#Guardamos la "receta"
+saveRDS(receta_entrenada,file = "receta_imputacion.rds")
+
+#Cargamos la receta
+receta_recuperada <- readRDS("receta_imputacion.rds")
+
+# Función para imputar nuevos datos
+imputar_datos <- function(df, receta, predictores) {
+  # Imputar exclusivamente las variables predictoras
+  x_imputado <- bake(receta,new_data = df[, predictores, drop = FALSE])
+  # Sustituir las variables originales
+  df[predictores] <- as.data.frame(x_imputado)
+  return(df)
+}
+
+datos_train_imp <- imputar_datos(datos_train_limpios, receta_recuperada, predictores) #aqui le aplicamos la imputación creada
+head(datos_train_imp)
+vis_miss(datos_train_limpios)
+vis_miss(datos_train_imp)
+#creo que debemos eliminar las entradas con la variable y, eliminada
 ```
 
 Ahora veamos un resumen global de los datos imputados.
 
 ```{r}
-summary(datos_imputados)
-print(dfSummary(datos_imputados),method = "render")
+summary(datos_train_imp)
+print(dfSummary(datos_train_imp),method = "render")
 ```
 
 Ahora miremos algunos gráficos para seguir explorando los datos. Matriz
@@ -404,7 +572,7 @@ de correlaciones
 ```{r}
 #Matriz de correlaciones
 #Seleccionamos las variables numéricas
-vars_numericas <- datos_imputados[, sapply(datos_imputados, is.numeric)]
+vars_numericas <- datos_train_imp[, sapply(datos_train_imp, is.numeric)]
 
 #Cálculo de la matriz de correlación
 matriz_cor <- round(cor(vars_numericas, use = "complete.obs"), 2)
@@ -413,52 +581,13 @@ corrplot(matriz_cor, method = "color", type = "upper",
          tl.col = "black", tl.srt = 45, addCoef.col = "black")
 ```
 
-Diagramas de cajas para comparar datos de generos favoritos con la
-autopercepción de los problemas mentales
-
-```{r}
-#Diagrama de cajas 
-ggplot(datos_imputados, aes(x = genero_fav, y = depresion, fill = genero_fav)) +
-  geom_boxplot() +
-  labs(title = "Diagrama de Cajas de depresion según genero_fav",
-       x = "Genero_fav",
-       y = "depresion") +
-  theme_minimal() +
-  theme(legend.position = "none")
-
-#Diagrama de cajas 
-ggplot(datos_imputados, aes(x = genero_fav, y = ansiedad, fill = genero_fav)) +
-  geom_boxplot() +
-  labs(title = "Diagrama de Cajas de ansiedad según genero_fav",
-       x = "Genero_fav",
-       y = "ansiedad") +
-  theme_minimal() +
-  theme(legend.position = "none")
-#Diagrama de cajas 
-ggplot(datos_imputados, aes(x = genero_fav, y = ocd, fill = genero_fav)) +
-  geom_boxplot() +
-  labs(title = "Diagrama de Cajas de ocd según genero_fav",
-       x = "Genero_fav",
-       y = "ocd") +
-  theme_minimal() +
-  theme(legend.position = "none")
-#Diagrama de cajas 
-ggplot(datos_imputados, aes(x = genero_fav, y = insomnio, fill = genero_fav)) +
-  geom_boxplot() +
-  labs(title = "Diagrama de Cajas de insomnio según genero_fav",
-       x = "Genero_fav",
-       y = "insomnio") +
-  theme_minimal() +
-  theme(legend.position = "none")
-
-```
 
 Diagrama de cajas para ver la relación de efectos con el uso de la
 música
 
 ```{r}
 #Diagrama de cajas 
-ggplot(datos_imputados, aes(x = efectos, y = horas_pd, fill = efectos)) +
+ggplot(datos_train_imp, aes(x = efectos, y = horas_pd, fill = efectos)) +
   geom_boxplot() +
   labs(title = "Diagrama de Cajas de horas según efecto",
        x = "efecto",
@@ -469,13 +598,27 @@ ggplot(datos_imputados, aes(x = efectos, y = horas_pd, fill = efectos)) +
 ```
 
 Por otro lado podremos comenzar a estudiar algunas de las preguntas hechas al comienzo del trabajo:
+## - ¿Qué género de música es el más habitual? ¿Y el que menos?
+
+```{r}
+conteo_generos <- datos_train_imp %>%
+  mutate(genero_fav = as.character(genero_fav)) %>%
+  count(genero_fav, sort = TRUE)
+print(conteo_generos)
+# Obtener los nombres correctos
+genero_mas_habitual  <- conteo_generos %>% slice(1)
+genero_menos_habitual <- conteo_generos %>% slice(n())
+
+cat("El género más habitual es:", genero_mas_habitual$genero_fav, "con", genero_mas_habitual$n, "personas.\n")
+cat("El género menos habitual es:", genero_menos_habitual$genero_fav, "con", genero_menos_habitual$n, "personas.\n")
+```
 
 ## - ¿Existe alguna relación entre grupos de edades y el padecimiento de alguna enfermedad mental?
 
 Para ello primero agruparemos por edad de 10 en diez a los participante, observamos que la gran mayoría se encuentra entre los 10 y 30 años mientras que a no hay apenas encuestados a partir de los 60 años. 
 
 ```{r}
-datosAgrupEdad<-datos_imputados %>% mutate(GrupoEdad=
+datosAgrupEdad<-datos_train_imp %>% mutate(GrupoEdad=
                                     cut(edad,breaks=seq(10,90,by=10), right=FALSE))
 table(datosAgrupEdad$GrupoEdad)
 prop.table(table(datosAgrupEdad$GrupoEdad))
@@ -483,7 +626,7 @@ prop.table(table(datosAgrupEdad$GrupoEdad))
 ```
 Por lo que decidiremos agrupar los datos de las personas con edad de sesenta en adelante para que así sea más significativo en nuestro estudio
 ```{r}
-datosEdad<-datos_imputados %>% mutate(GrupoEdad=case_when(
+datosEdad<-datos_train_imp %>% mutate(GrupoEdad=case_when(
   
   edad>=10 & edad<20 ~ "[10,20)",
   edad>=20 & edad<30 ~ "[20,30)",
@@ -556,6 +699,8 @@ ggplot(datosdensidad, aes(x = `Escala de autoevaluacion`, colour = Trastorno, fi
   theme_minimal()
 
 ```
+
+
 A partir de los gráficos proporcionados podemos 
 
 ## - ¿Predomina alguna edad con algún tipo de enfermedad mental?
@@ -565,6 +710,102 @@ A partir de los gráficos proporcionados podemos
 ## - ¿Existe algún género musical que tenga efecto positivo en alguna de las enfermedades mentales? 
 
 ## - ¿Cuáles son los géneros más/menos escuchados entre la gente con depresión/ansiedad/ocd/insomnia?
+
+
+Diagramas de cajas para comparar datos de generos favoritos con la
+autopercepción de los problemas mentales
+
+```{r}
+#Diagrama de cajas 
+ggplot(datos_train_imp, aes(x = genero_fav, y = depresion, fill = genero_fav)) +
+  geom_boxplot() +
+  labs(title = "Diagrama de Cajas de depresion según genero_fav",
+       x = "Genero_fav",
+       y = "depresion") +
+  theme_minimal() +
+  theme(legend.position = "none")
+
+#Diagrama de cajas 
+ggplot(datos_train_imp, aes(x = genero_fav, y = ansiedad, fill = genero_fav)) +
+  geom_boxplot() +
+  labs(title = "Diagrama de Cajas de ansiedad según genero_fav",
+       x = "Genero_fav",
+       y = "ansiedad") +
+  theme_minimal() +
+  theme(legend.position = "none")
+#Diagrama de cajas 
+ggplot(datos_train_imp, aes(x = genero_fav, y = ocd, fill = genero_fav)) +
+  geom_boxplot() +
+  labs(title = "Diagrama de Cajas de ocd según genero_fav",
+       x = "Genero_fav",
+       y = "ocd") +
+  theme_minimal() +
+  theme(legend.position = "none")
+#Diagrama de cajas 
+ggplot(datos_train_imp, aes(x = genero_fav, y = insomnio, fill = genero_fav)) +
+  geom_boxplot() +
+  labs(title = "Diagrama de Cajas de insomnio según genero_fav",
+       x = "Genero_fav",
+       y = "insomnio") +
+  theme_minimal() +
+  theme(legend.position = "none")
+
+```
+
+```{r}
+#Porcentaje de efecto positivo por genero_fav
+efecto_por_genero <- datos_train_imp %>%
+  group_by(genero_fav) %>%
+  summarise(
+    total = n(),
+    mejora = sum(efectos == "Improve", na.rm = TRUE),
+    pct_mejora = round((mejora / total) * 100, 2)
+  ) %>%
+  arrange(desc(pct_mejora))
+
+print(efecto_por_genero)
+
+#Prueba estadística de Chi-cuadrado para ver si la relación es significativa
+tabla_contingencia <- table(datos_train_imp$genero_fav, datos_train_imp$efectos)
+chisq.test(tabla_contingencia)
+```
+(Preguntar a carmen po el p-valor que es cerca de 0,05 pero no menor)
+```{r}
+#Función para obtener género más y menos escuchado según trastorno
+generos_por_enfermedad <- function(df, variable_trastorno, umbral = 5) {
+  df %>%
+  mutate(genero_fav = as.character(genero_fav)) %>%
+    filter(.data[[variable_trastorno]] >= umbral) %>%
+    count(genero_fav, name = "cantidad") %>%
+    arrange(desc(cantidad))
+}
+
+# Géneros para personas con Depresión
+depresion_gen <- generos_por_enfermedad(datos_train_imp, "depresion")
+cat("--- DEPRESIÓN ---\nMás escuchado:", head(depresion_gen$genero_fav, 1), 
+    "\nMenos escuchado:", tail(depresion_gen$genero_fav, 1), "\n\n")
+
+# Géneros para personas con Ansiedad
+ansiedad_gen <- generos_por_enfermedad(datos_train_imp, "ansiedad")
+cat("--- ANSIEDAD ---\nMás escuchado:", head(ansiedad_gen$genero_fav, 1), 
+    "\nMenos escuchado:", tail(ansiedad_gen$genero_fav, 1), "\n\n")
+
+# Géneros para personas con TOC (OCD)
+ocd_gen <- generos_por_enfermedad(datos_train_imp, "ocd")
+cat("--- OCD ---\nMás escuchado:", head(ocd_gen$genero_fav, 1), 
+    "\nMenos escuchado:", tail(ocd_gen$genero_fav, 1), "\n\n")
+
+# Géneros para personas con Insomnio
+insomnio_gen <- generos_por_enfermedad(datos_train_imp, "insomnio")
+cat("--- INSOMNIO ---\nMás escuchado:", head(insomnio_gen$genero_fav, 1), 
+    "\nMenos escuchado:", tail(insomnio_gen$genero_fav, 1), "\n\n")
+```
+
+
+## - ¿Existe algún género musical que tenga efecto positivo en alguna de las enfermedades mentales? 
+
+## - ¿Cuáles son los géneros más/menos escuchados entre la gente con depresión/ansiedad/ocd/insomnia?
+
 
 Una vez se tiene una exploración global de los datos, comenzaremos a
 enfocar nuestro estudio en la predicción que buscamos analizar. En
