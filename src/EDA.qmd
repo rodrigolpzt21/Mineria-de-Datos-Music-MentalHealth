@@ -116,6 +116,7 @@ library(corrplot)
 library(visdat) #para datos faltantes
 library(naniar) ## gg_mis_var
 #library(FSelector) #ver el valor que aporta bpm
+library(FSelectorRcpp)
 library(recipes) #arbol de imputación con guardado
 datos <- read.csv("../data/musicData.csv",na.strings = c("", " ", "NA", "NaN"))
 ```
@@ -538,7 +539,7 @@ modelo_anova <- aov(bpm ~ efectos, data = datos_train)
 # Ver el resumen con el p-valor
 summary(modelo_anova)
 
-information.gain(efectos ~ bpm, data = datos_train)
+information_gain(efectos ~ bpm, data = datos_train)
 ```
 
 Resultado boxplot: Vemos que tienen medianas similares, entorno a 120
@@ -611,8 +612,8 @@ summary(datos_train_imp)
 print(dfSummary(datos_train_imp),method = "render")
 ```
 
-Ahora miremos algunos gráficos para seguir explorando los datos. Matriz
-de correlaciones
+Ahora miremos algunos gráficos para seguir explorando los datos. Veamos
+la matriz de correlaciones.
 
 ```{r}
 #Matriz de correlaciones
@@ -626,8 +627,8 @@ corrplot(matriz_cor, method = "color", type = "upper",
          tl.col = "black", tl.srt = 45, addCoef.col = "black")
 ```
 
-Diagrama de cajas para ver la relación de efectos con el uso de la
-música
+Seguimos con un diagrama de cajas para ver la relación de efectos con el
+uso de la música.
 
 ```{r}
 #Diagrama de cajas 
@@ -642,8 +643,9 @@ ggplot(datos_train_imp, aes(x = efectos, y = horas_pd, fill = efectos)) +
 ```
 
 Por otro lado podremos comenzar a estudiar algunas de las preguntas
-hechas al comienzo del trabajo: \## - ¿Qué género de música es el más
-habitual? ¿Y el que menos?
+hechas al comienzo del trabajo:
+
+## - ¿Qué género de música es el más habitual? ¿Y el que menos?
 
 ```{r}
 conteo_generos <- datos_train_imp %>%
@@ -674,7 +676,7 @@ prop.table(table(datosAgrupEdad$GrupoEdad))
 
 Por lo que decidiremos agrupar los datos de las personas con edad de
 sesenta en adelante para que así sea más significativo en nuestro
-estudio
+estudio.
 
 ```{r}
 datosEdad<-datos_train_imp %>% mutate(GrupoEdad=case_when(
@@ -751,9 +753,72 @@ ggplot(datosdensidad, aes(x = `Escala de autoevaluacion`, colour = Trastorno, fi
 
 ```
 
-A partir de los gráficos proporcionados podemos
+A partir del análisis de las distribuciones por edad, se concluye que sí
+existe una relación entre los grupos de edad y la autoevaluación de los
+problemas de salud mental. Los participantes más jóvenes, que concentran
+la gran mayoría de la muestra (principalmente entre los 10 y 30 años),
+presentan densidades más elevadas y puntuaciones más altas en la escala
+de autoevaluación, especialmente en ansiedad y depresión, mientras que
+los grupos de mayor edad muestran distribuciones desplazadas hacia
+valores considerablemente más bajos. No obstante, estas diferencias
+deben tomarse con cautela debido a la escasa representación de
+encuestados en los tramos superiores de edad.
 
 ## - ¿Predomina alguna edad con algún tipo de enfermedad mental?
+
+```{r}
+# Pasamos los datos a formato largo para facilitar la comparación por enfermedad
+datos_largo <- datosAgrupEdad %>%
+  pivot_longer(cols = c(ansiedad, depresion, insomnio, ocd),
+               names_to = "Enfermedad", values_to = "Puntuacion")
+
+# Gráfico de caja (Boxplot) por grupo de edad para cada enfermedad
+ggplot(datos_largo, aes(x = GrupoEdad, y = Puntuacion, fill = GrupoEdad)) +
+  geom_boxplot(alpha = 0.7) +
+  facet_wrap(~ Enfermedad) +
+  theme_minimal() +
+  labs(title = "Nivel de problemas de salud mental por Grupo de Edad",
+       x = "Grupo de Edad", y = "Puntuación de autoevaluación") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1), legend.position = "none")
+
+
+# Calculamos la puntuación media de cada enfermedad por cada grupo de edad
+datos_medias <- datos_largo %>%
+  group_by(GrupoEdad, Enfermedad) %>%
+  summarise(Media_Puntuacion = mean(Puntuacion, na.rm = TRUE), .groups = 'drop')
+
+# Generamos el mapa de calor
+ggplot(datos_medias, aes(x = GrupoEdad, y = Enfermedad, fill = Media_Puntuacion)) +
+  geom_tile(color = "white") +
+  scale_fill_gradient(low = "lightblue", high = "darkred") +
+  theme_minimal() +
+  labs(title = "Mapa de calor: Puntuación media por Edad y Patología",
+       x = "Grupo de Edad", y = "Enfermedad mental", fill = "Media") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+A partir del mapa de calor, se concluye que la ansiedad es la patología
+con mayor intensidad y predominio en la muestra, registrando las
+puntuaciones medias más altas (tonos rojo oscuro) especialmente en los
+grupos de edad más jóvenes, desde los 10 hasta los 40 años. La depresión
+se sitúa en un segundo plano con valores también elevados en esos mismos
+tramos de edad. Por el contrario, el insomnio y el TOC muestran colores
+más claros, lo que indica que sus puntuaciones medias de autoevaluación
+son considerablemente más bajas en la mayoría de los grupos.
+
+```{r}
+modelo_aov <- aov(ansiedad ~ GrupoEdad, data = datosAgrupEdad)
+summary(modelo_aov)
+```
+
+A partir de los resultados del análisis de la varianza (ANOVA), se
+concluye que sí existen diferencias estadísticamente significativas en
+los niveles de ansiedad entre los diferentes grupos de edad.
+
+Dado que el p-valor es considerablemente inferior al umbral habitual de
+0.05), se rechaza la hipótesis nula, lo que confirma que la edad es un
+factor que influye de manera relevante en la autoevaluación de la
+ansiedad.
 
 ## - ¿Qué género de música es el más habitual? ¿Y el que menos?
 
@@ -761,8 +826,8 @@ A partir de los gráficos proporcionados podemos
 
 ## - ¿Cuáles son los géneros más/menos escuchados entre la gente con depresión/ansiedad/ocd/insomnia?
 
-Diagramas de cajas para comparar datos de generos favoritos con la
-autopercepción de los problemas mentales
+Veamos ahora diagramas de cajas para comparar datos de generos favoritos
+con la autopercepción de los problemas mentales.
 
 ```{r}
 #Diagrama de cajas 
