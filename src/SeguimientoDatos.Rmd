@@ -1,0 +1,19 @@
+---
+title: "SeguimientoDatos"
+output: html_notebook
+---
+
+datos : son nuestros datos originales con los nombres cambiados a español después y ya.
+
+datos_factor: pasamos las variables de datos a categóricas
+
+datos_train 
+datos_val
+datos_test --- las particiones de datos_factor originales
+
+datos_train_bpm <-- datos_train (la original pasa a ser esta pues en datos train vamos a limpiar datos atípicos)
+datos_train (datos_train pero con algunas instancias atipicas en bpm pasadas a NA)
+
+datos_train_sinbpm <-- eliminamos para aislar de la variable bpm , datos_train (sin bpm)
+
+datos_train_imp <-- el anterior pero con datos imputados para los demás NA 

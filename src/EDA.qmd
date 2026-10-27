@@ -478,12 +478,28 @@ Vamos a transformar las entrafas atípicas en NA por ahora, considerando que se 
 rellenado con desconocimiento, para poder analizar de forma más sencilla, si debemos 
 mantener o no la variable bpm. 
 ```{r}
+#Creamos la copia para guardar el previo al cambio
+datos_train_bpm <- datos_train
 #Convertimos en NA los valores fuera del rango normal
 datos_train$bpm[datos_train$bpm < 40 | datos_train$bpm > 220] <- NA
 summary(datos_train$bpm)
 #Vemos que porcentaje de NA queda en esa variable
 pct_na <- mean(is.na(datos_train$bpm)) * 100
 cat("Porcentaje de NAs:", round(pct_na, 2), "%\n")
+
+
+#boxplot previo a limpieza de anomalias
+ggplot(subset(datos_train_bpm, !is.na(bpm)), aes(y = bpm)) +
+  geom_boxplot(fill = "lightgreen", alpha = 0.7) +
+  scale_y_continuous(limits = c(0, 230), breaks = seq(0, 220, by = 20)) +
+  labs(title = "Boxplot de BPM (Escala 0 - 220)", y = "BPM") +
+  theme_minimal()
+#boxplot post limpieza de anomalias
+ggplot(subset(datos_train, !is.na(bpm)), aes(y = bpm)) +
+  geom_boxplot(fill = "green", alpha = 0.7) +
+  scale_y_continuous(limits = c(0, 230), breaks = seq(0, 220, by = 20)) +
+  labs(title = "Boxplot de BPM limpio de valores anómalos (Escala 0 - 230)", y = "BPM") +
+  theme_minimal()
 ```
 Nos sale un porcentaje que puede ser bastante significativo, vamos a profundizar
 el análisis. Para ello vamos a ver un boxplot con efectos, hacer un anova y utilizar 
@@ -512,13 +528,13 @@ importancia nos dice que a lo sumo aporta un 0,56% de la información en la vari
 Lo que es despreciable.
 
 Por todos estos resultados junto con la gran cantidad de datos faltantes de esta variable,
-podemos concluir que eliminarla es la mejor opción por ahora.
+podemos concluir que esta variable parece no aportarnos mucho, por ello la dejaremos en cuarentena. Y posteriormente iremos comparando si nos aporta. 
 
 ```{r}
 #Eliminamos bpm
-datos_train_limpios <- datos_train %>% 
+datos_train_sinbpm <- datos_train %>% 
   select(-bpm)
-head(datos_train_limpios)
+head(datos_train_sinbpm)
 ```
 
 A continuación vamos a imputar los datos faltantes del resto de variables, para lo que
@@ -528,14 +544,14 @@ con los conjuntos de validación y test.
 ```{r}
 #Receta de imputación
 #Excluimos la variable objetivo
-predictores <- setdiff(names(datos_train_limpios), "efectos")
+predictores <- setdiff(names(datos_train_sinbpm), "efectos")
 # Crear receta
-receta <- recipe(~ ., data = datos_train_limpios[, predictores, drop = FALSE]) |>
+receta <- recipe(~ ., data = datos_train_sinbpm[, predictores, drop = FALSE]) |>
   step_impute_bag(extranjero,instrumentista,trabajando,plataforma, # variables a imputar
                   trees = 25,seed_val = 123)
 
 #Aplicamos a train
-receta_entrenada <- prep(receta,training = datos_train_limpios[, predictores, drop = FALSE])
+receta_entrenada <- prep(receta,training = datos_train_sinbpm[, predictores, drop = FALSE])
 
 #Guardamos la "receta"
 saveRDS(receta_entrenada,file = "receta_imputacion.rds")
@@ -552,9 +568,9 @@ imputar_datos <- function(df, receta, predictores) {
   return(df)
 }
 
-datos_train_imp <- imputar_datos(datos_train_limpios, receta_recuperada, predictores) #aqui le aplicamos la imputación creada
+datos_train_imp <- imputar_datos(datos_train_sinbpm, receta_recuperada, predictores) #aqui le aplicamos la imputación creada
 head(datos_train_imp)
-vis_miss(datos_train_limpios)
+vis_miss(datos_train_sinbpm)
 vis_miss(datos_train_imp)
 #creo que debemos eliminar las entradas con la variable y, eliminada
 ```
