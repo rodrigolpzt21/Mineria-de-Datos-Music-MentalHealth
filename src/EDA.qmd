@@ -1,7 +1,7 @@
 ---
 title: "Analisis Exploratorio de Datos"
 subtitle: "Primera entrega minería de datos"
-author: "Carolina,María,Rodrigo"
+author: "Carolina Díaz Alende,María,Rodrigo"
 date: today
 date-format: "DD [de] MMMM [de] YYYY"
 lang: es
@@ -101,7 +101,10 @@ Variables de los datos en bruto antes de trabajar y depurar:
   datos.
 
 ## Planteamiento inicial del EDA
-Empezamos leyendo los datos y cargando todas las librerias que vamos a usar a lo largo del EDA. 
+
+Empezamos leyendo los datos y cargando todas las librerias que vamos a
+usar a lo largo del EDA.
+
 ```{r}
 library(dplyr)
 library(caret)
@@ -112,7 +115,7 @@ library(summarytools)
 library(corrplot)
 library(visdat) #para datos faltantes
 library(naniar) ## gg_mis_var
-library(FSelector) #ver el valor que aporta bpm
+#library(FSelector) #ver el valor que aporta bpm
 library(recipes) #arbol de imputación con guardado
 datos <- read.csv("../data/musicData.csv",na.strings = c("", " ", "NA", "NaN"))
 ```
@@ -134,12 +137,11 @@ investigar. Aquí vamos poniendo lo que vamos a ir haciendo
 alguna enfermedad mental?¿Predomina alguna edad con algún tipo de
 enfermedad mental?
 
-¿Qué género de música es el más habitual? ¿Y el que
-menos? 
+¿Qué género de música es el más habitual? ¿Y el que menos?
 
-¿Existe algún género musical que tenga efecto positivo en alguna
-de las enfermedades mentales? ¿Cuáles son los géneros más/menos
-escuchados entre la gente con depresión/ansiedad/ocd/insomnia?
+¿Existe algún género musical que tenga efecto positivo en alguna de las
+enfermedades mentales? ¿Cuáles son los géneros más/menos escuchados
+entre la gente con depresión/ansiedad/ocd/insomnia?
 
 ## Proceso de exploración
 
@@ -165,7 +167,7 @@ Podemos observar que hay unos vacios en los datos, que debemos
 investigar. Ejemplo de ello en el str, es en efectos, que tenemos las
 dos primeras entradas vacias (NA).
 
-Vamos a ir revisando las variables una a una
+Vamos a ir revisando las variables una a una.
 
 Fecha: Observamos que cada persona tiene una fecha distinta, sumado a
 que por el contexto de nuestra investigación, la fecha de entrega del
@@ -174,7 +176,6 @@ podemos concluir que esta variable es una candidata a ser eliminada.
 
 ```{r}
 table(datos$fecha, useNA = 'always')
-
 ```
 
 Variable edad: En edad vemos que tenemos un valor N/A, por lo demás
@@ -193,8 +194,10 @@ edad_min <- min(datos$edad, na.rm = TRUE)
 print(edad_min)
 ```
 
-Variable plataforma: vemos que hay un valor no rellenado NA.
-Por otro lado, podemos ver que esta varible es de tipo categórico y cuyas entradas son del tipo character, para evitarnos problemas, vamos a transformarla a tipo factor.
+Variable plataforma: vemos que hay un valor no rellenado NA. Por otro
+lado, podemos ver que esta varible es de tipo categórico y cuyas
+entradas son del tipo character, para evitarnos problemas, vamos a
+transformarla a tipo factor más adelante.
 
 ```{r}
 table(datos$plataforma, useNA = 'always')
@@ -228,16 +231,16 @@ horas_min <- min(datos_factor$horas_pd, na.rm = TRUE)
 print(horas_min)
 ```
 
-Variables trabajando, instrumentista y musico: Vemos que en 4 de estas 5
-variables que se pueden tratar como binarias al ser si o no, tenemos
-algunos datos faltantes como NA.
+Variables trabajando, instrumentista, músico, explorador y extranjero:
+Vemos que en 4 de estas 5 variables que se pueden tratar como binarias
+al ser si o no, tenemos algunos datos faltantes como NA.
 
 ```{r}
 print("Variable trabajando:")
 table(datos_factor$trabajando, useNA = 'always')
 print("Variable instrumentista:")
 table(datos_factor$instrumentista, useNA = 'always')
-print("Variable musico:")
+print("Variable músico:")
 table(datos_factor$musico, useNA = 'always')
 print("Variable explorador:")
 table(datos_factor$explorador, useNA = 'always')
@@ -263,14 +266,14 @@ media y la mediana se debe a que tenemos valores muy bajos entre 0 y 100
 y luego algunos valores más altos como 624 o 999999999, lo que hace que
 al haber tal diferencia de magnitud esos valores más separados tengan
 mayor carga en la media y quizá se deba a algún error en los datos, que
-tocará analizar. 
-Además, por el contexto de nuestros datos debemos plantearnos la relevancia de 
-esta variable para nuestro estudio ya que no tenemos claro que sea relevante. 
+tocará analizar. Además, por el contexto de nuestros datos debemos
+plantearnos la relevancia de esta variable para nuestro estudio ya que
+no tenemos claro que sea relevante.
 
-También llama la atención que tenemos muchos datos faltantes en bpm, lo que
-aumenta nuestra desconfianza en esta variable. Posteriormente continuaremos el
-análisis sobre esta variable para determinar si la mantenemos o eliminamos de 
-nuestro estudio.
+También llama la atención que tenemos muchos datos faltantes en bpm, lo
+que aumenta nuestra desconfianza en esta variable. Posteriormente
+continuaremos el análisis sobre esta variable para determinar si la
+mantenemos o eliminamos de nuestro estudio.
 
 ```{r}
 table(datos_factor$bpm, useNA = 'always')
@@ -323,6 +326,9 @@ print("Variable f_vgm:")
 table(datos_factor$f_vgm, useNA = 'always')
 ```
 
+Continuamos ahora analizando las variables objetivos: ansiedad,
+depresión, insomnio y ocd.
+
 Variable ansiedad:
 
 ```{r}
@@ -333,7 +339,7 @@ cat("La media es", media_ansiedad, "\n")
 cat("La mediana es",mediana_ansiedad, "\n")
 ```
 
-Variable depresion:
+Variable depresión:
 
 ```{r}
 table(datos_factor$depresion, useNA = 'always')
@@ -363,26 +369,30 @@ cat("La media es", media_ocd, "\n")
 cat("La mediana es",mediana_ocd, "\n")
 ```
 
-Variable efectos: Como vimos al inicio en esta variable tenemos 8 NA, que nos
-tocará ver como tratar más adelante.
+Variable efectos: Como vimos al inicio en esta variable tenemos 8 NA,
+que nos tocará ver como tratar más adelante.
 
 ```{r}
 table(datos_factor$efectos, useNA = 'always')
 ```
 
-Variable permisos: Esta variable al representar el permiso de usar los datos del
-formulario, fuerza a que todas las respuestas sean que afirmativas, por lo que 
-procederemos a eliminarla posteriormente, pues es una clara candidata a ser 
-eliminada, pues no aportará tenerla en cuenta para nuestro proyecto.
+Variable permisos: Esta variable al representar el permiso de usar los
+datos del formulario, fuerza a que todas las respuestas sean que
+afirmativas, por lo que procederemos a eliminarla posteriormente, pues
+es una clara candidata a ser eliminada, pues no aportará tenerla en
+cuenta para nuestro proyecto.
 
 ```{r}
 table(datos_factor$permisos, useNA = 'always')
 ```
-Ya hemos analizado nuestro conjunto de datos por encima, aunque tenemos algunas
-dudas sobre algunas variables candidatas a ser eliminadas, hay dos que son claras
-y que podemos eliminar antes de la partición de nuestros datos. Estas son la 
-fecha y la el consentimiento. También agruparemos algunas de nuestras categorias 
-de género favorito en otros géneros.
+
+Ya hemos analizado nuestro conjunto de datos por encima, aunque tenemos
+algunas dudas sobre algunas variables candidatas a ser eliminadas, hay
+dos que son claras y que podemos eliminar antes de la partición de
+nuestros datos. Estas son la fecha y la el consentimiento. También
+agruparemos algunas de nuestras categorias de género favorito en otros
+géneros.
+
 ```{r}
 #Agrupamos las categorías
 datos_factor$genero_fav<-fct_collapse(datos_factor$genero_fav,"Otros géneros"=c("Gospel","Latin", "Lofi"))
@@ -395,7 +405,8 @@ head(datos_preparticion)
 
 ## Partición de los datos
 
-Dada la cantidad de datos decidimos realizar una partición train (0.8·65)-test (0.8·0.35) -validación (0.2).
+Dada la cantidad de datos decidimos realizar una partición train
+(0.8·65)-test (0.8·0.35) -validación (0.2).
 
 ```{r}
 set.seed(154684)
@@ -424,7 +435,8 @@ datos_test <- datos_tt[-idx_tt$Resample1,]
 dim(datos_test)
 ```
 
-Conjunto de validación NO LO USAMOS NUNCA MÁS HASTA EL FINAL DEL TODO DEL PROYECTO:
+Conjunto de validación NO LO USAMOS NUNCA MÁS HASTA EL FINAL DEL TODO
+DEL PROYECTO:
 
 ```{r}
 datos_val <- datos_preparticion[-idx_tt_val$Resample1,]
@@ -433,16 +445,22 @@ dim(datos_val)
 
 ## Continuamos con el EDA
 
-Ahora ya solo continuaremos con el conjunto de entrenamiento datos_train
+Ahora ya solo continuaremos con el conjunto de entrenamiento
+datos_train.
 
-En la primera parte del análisis, vimos que la variable bpm nos generaba dudas de
-su utilidad, por sus valores y por la gran cantidad de datos faltantes que tenía.
-Procedemos a analizar esta variable para determinar si queremos eliminarla o mantenerla. 
+En la primera parte del análisis, vimos que la variable bpm nos generaba
+dudas de su utilidad, por sus valores y por la gran cantidad de datos
+faltantes que tenía. Procedemos a analizar esta variable para determinar
+si queremos eliminarla o mantenerla.
+
 ```{r}
 vis_miss(datos_train)
 gg_miss_var(datos_train)
 ```
-Como podemos observar el 13% de las respuestas de esa variable son un valor nulo.
+
+Como podemos observar el 13% de las respuestas de esa variable son un
+valor nulo.
+
 ```{r}
 # Ver resumen estadístico básico (mínimo, máximo, cuartiles)
 summary(datos_train$bpm)
@@ -469,14 +487,16 @@ stripchart(datos_train$bpm,
            pch = 19, 
            col = rgb(0, 0, 1, 0.3))
 ```
-Los valores típicos de bpm en la música oscilan habitualmente entre los 40 y los 220 bpm,
-pero podemos ver que tenemos 4 valores atípicos por debajo de 40 y 1 por encima
-de 220, además de tener en la partición 50 NA. 
-Claramente la media está siendo afectada por el valor atípico superior, pues es varias
-escalas por encima. 
-Vamos a transformar las entrafas atípicas en NA por ahora, considerando que se han 
-rellenado con desconocimiento, para poder analizar de forma más sencilla, si debemos 
-mantener o no la variable bpm. 
+
+Los valores típicos de bpm en la música oscilan habitualmente entre los
+40 y los 220 bpm, pero podemos ver que tenemos 4 valores atípicos por
+debajo de 40 y 1 por encima de 220, además de tener en la partición 50
+NA. Claramente la media está siendo afectada por el valor atípico
+superior, pues es varias escalas por encima. Vamos a transformar las
+entradas atípicas en NA por ahora, considerando que se han rellenado con
+desconocimiento, para poder analizar de forma más sencilla, si debemos
+mantener o no la variable bpm.
+
 ```{r}
 #Creamos la copia para guardar el previo al cambio
 datos_train_bpm <- datos_train
@@ -501,9 +521,12 @@ ggplot(subset(datos_train, !is.na(bpm)), aes(y = bpm)) +
   labs(title = "Boxplot de BPM limpio de valores anómalos (Escala 0 - 230)", y = "BPM") +
   theme_minimal()
 ```
-Nos sale un porcentaje que puede ser bastante significativo, vamos a profundizar
-el análisis. Para ello vamos a ver un boxplot con efectos, hacer un anova y utilizar 
-métodos que nos digan la ganancia de información que aporta la variable. 
+
+Nos sale un porcentaje que puede ser bastante significativo, vamos a
+profundizar el análisis. Para ello vamos a ver un boxplot con efectos,
+hacer un anova y utilizar métodos que nos digan la ganancia de
+información que aporta la variable.
+
 ```{r}
 #Comparar la distribución de BPM con la variable respuesta efecto
 boxplot(bpm ~ efectos, data = datos_train, 
@@ -517,18 +540,23 @@ summary(modelo_anova)
 
 information.gain(efectos ~ bpm, data = datos_train)
 ```
-Resultado boxplot: Vemos que tienen medianas similares,entorno a 120,en los tres 
-outputs de la variable respuesta, sumado a que parecen tener distribuciones similares,
-es el primer indicio de que no aporta mucho esta variable.
 
-Anova y test de aporte: al realizar un anova, nos da un p-valor muy alto de 0,87,
-por lo que no hay evidencia suficiente para rechazar la hipótesis nula y por tanto, 
-no hay diferencias significativas entre las medias de los grupos. Y encima el test de 
-importancia nos dice que a lo sumo aporta un 0,56% de la información en la variable respuesta.
-Lo que es despreciable.
+Resultado boxplot: Vemos que tienen medianas similares, entorno a 120
+,en los tres outputs de la variable respuesta, sumado a que parecen
+tener distribuciones similares, es el primer indicio de que no aporta
+mucho esta variable.
 
-Por todos estos resultados junto con la gran cantidad de datos faltantes de esta variable,
-podemos concluir que esta variable parece no aportarnos mucho, por ello la dejaremos en cuarentena. Y posteriormente iremos comparando si nos aporta. 
+Anova y test de aporte: al realizar un anova, nos da un p-valor muy alto
+de 0,87, por lo que no hay evidencia suficiente para rechazar la
+hipótesis nula y por tanto, no hay diferencias significativas entre las
+medias de los grupos. Y encima el test de importancia nos dice que a lo
+sumo aporta un 0,56% de la información en la variable respuesta. Lo que
+es despreciable.
+
+Por todos estos resultados junto con la gran cantidad de datos faltantes
+de esta variable, podemos concluir que esta variable parece no
+aportarnos mucho, por ello la dejaremos en cuarentena. Y posteriormente
+iremos comparando si nos aporta.
 
 ```{r}
 #Eliminamos bpm
@@ -537,9 +565,10 @@ datos_train_sinbpm <- datos_train %>%
 head(datos_train_sinbpm)
 ```
 
-A continuación vamos a imputar los datos faltantes del resto de variables, para lo que
-usaremos arboles de regresión. Intentaremos guardar la forma de imputar los datos para cuando trabajemos 
-con los conjuntos de validación y test. 
+A continuación vamos a imputar los datos faltantes del resto de
+variables, para lo que usaremos arboles de regresión. Intentaremos
+guardar la forma de imputar los datos para cuando trabajemos con los
+conjuntos de validación y test.
 
 ```{r}
 #Receta de imputación
@@ -597,7 +626,6 @@ corrplot(matriz_cor, method = "color", type = "upper",
          tl.col = "black", tl.srt = 45, addCoef.col = "black")
 ```
 
-
 Diagrama de cajas para ver la relación de efectos con el uso de la
 música
 
@@ -613,8 +641,9 @@ ggplot(datos_train_imp, aes(x = efectos, y = horas_pd, fill = efectos)) +
 
 ```
 
-Por otro lado podremos comenzar a estudiar algunas de las preguntas hechas al comienzo del trabajo:
-## - ¿Qué género de música es el más habitual? ¿Y el que menos?
+Por otro lado podremos comenzar a estudiar algunas de las preguntas
+hechas al comienzo del trabajo: \## - ¿Qué género de música es el más
+habitual? ¿Y el que menos?
 
 ```{r}
 conteo_generos <- datos_train_imp %>%
@@ -631,7 +660,9 @@ cat("El género menos habitual es:", genero_menos_habitual$genero_fav, "con", ge
 
 ## - ¿Existe alguna relación entre grupos de edades y el padecimiento de alguna enfermedad mental?
 
-Para ello primero agruparemos por edad de 10 en diez a los participante, observamos que la gran mayoría se encuentra entre los 10 y 30 años mientras que a no hay apenas encuestados a partir de los 60 años. 
+Para ello primero agruparemos por edad de 10 en diez a los participante,
+observamos que la gran mayoría se encuentra entre los 10 y 30 años
+mientras que a no hay apenas encuestados a partir de los 60 años.
 
 ```{r}
 datosAgrupEdad<-datos_train_imp %>% mutate(GrupoEdad=
@@ -640,7 +671,11 @@ table(datosAgrupEdad$GrupoEdad)
 prop.table(table(datosAgrupEdad$GrupoEdad))
 
 ```
-Por lo que decidiremos agrupar los datos de las personas con edad de sesenta en adelante para que así sea más significativo en nuestro estudio
+
+Por lo que decidiremos agrupar los datos de las personas con edad de
+sesenta en adelante para que así sea más significativo en nuestro
+estudio
+
 ```{r}
 datosEdad<-datos_train_imp %>% mutate(GrupoEdad=case_when(
   
@@ -716,17 +751,15 @@ ggplot(datosdensidad, aes(x = `Escala de autoevaluacion`, colour = Trastorno, fi
 
 ```
 
-
-A partir de los gráficos proporcionados podemos 
+A partir de los gráficos proporcionados podemos
 
 ## - ¿Predomina alguna edad con algún tipo de enfermedad mental?
 
 ## - ¿Qué género de música es el más habitual? ¿Y el que menos?
 
-## - ¿Existe algún género musical que tenga efecto positivo en alguna de las enfermedades mentales? 
+## - ¿Existe algún género musical que tenga efecto positivo en alguna de las enfermedades mentales?
 
 ## - ¿Cuáles son los géneros más/menos escuchados entre la gente con depresión/ansiedad/ocd/insomnia?
-
 
 Diagramas de cajas para comparar datos de generos favoritos con la
 autopercepción de los problemas mentales
@@ -785,7 +818,9 @@ print(efecto_por_genero)
 tabla_contingencia <- table(datos_train_imp$genero_fav, datos_train_imp$efectos)
 chisq.test(tabla_contingencia)
 ```
+
 (Preguntar a carmen po el p-valor que es cerca de 0,05 pero no menor)
+
 ```{r}
 #Función para obtener género más y menos escuchado según trastorno
 generos_por_enfermedad <- function(df, variable_trastorno, umbral = 5) {
@@ -817,11 +852,9 @@ cat("--- INSOMNIO ---\nMás escuchado:", head(insomnio_gen$genero_fav, 1),
     "\nMenos escuchado:", tail(insomnio_gen$genero_fav, 1), "\n\n")
 ```
 
-
-## - ¿Existe algún género musical que tenga efecto positivo en alguna de las enfermedades mentales? 
+## - ¿Existe algún género musical que tenga efecto positivo en alguna de las enfermedades mentales?
 
 ## - ¿Cuáles son los géneros más/menos escuchados entre la gente con depresión/ansiedad/ocd/insomnia?
-
 
 Una vez se tiene una exploración global de los datos, comenzaremos a
 enfocar nuestro estudio en la predicción que buscamos analizar. En
