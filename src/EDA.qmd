@@ -619,8 +619,9 @@ summary(datos_train_imp)
 print(dfSummary(datos_train_imp),method = "render")
 ```
 
-Ahora miremos algunos gráficos para seguir explorando los datos. Veamos
-la matriz de correlaciones.
+#### Ahora miremos algunos gráficos para seguir explorando los datos.
+
+Veamos la matriz de correlaciones de las variables numéticas
 
 ```{r}
 #Matriz de correlaciones
@@ -633,9 +634,10 @@ print(matriz_cor)
 corrplot(matriz_cor, method = "color", type = "upper", 
          tl.col = "black", tl.srt = 45, addCoef.col = "black")
 ```
+La correlación que más llama la atención es la de ansiedad y depresión que es la más alta entre todas aunque no deja de ser solo de 0,51.
 
-Seguimos con un diagrama de cajas para ver la relación de efectos con el
-uso de la música.
+Seguimos con un diagrama de cajas para ver la relación de efectos con la cantidad de
+horas de escucha de música.
 
 ```{r}
 #Diagrama de cajas 
@@ -648,6 +650,9 @@ ggplot(datos_train_imp, aes(x = efectos, y = horas_pd, fill = efectos)) +
   theme(legend.position = "none")
 
 ```
+Vemos que entre improve y no effect tenemos un boxplot bastante similar con medianas similares.
+Por otro lado los que empeoran parecen escuchar algo menos de música, aunque habría que profundizar, 
+antes de sacar conclusiones.
 
 Por otro lado podremos comenzar a estudiar algunas de las preguntas
 hechas al comienzo del trabajo:
