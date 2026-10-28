@@ -115,7 +115,6 @@ library(summarytools)
 library(corrplot)
 library(visdat) #para datos faltantes
 library(naniar) ## gg_mis_var
-#library(FSelector) #ver el valor que aporta bpm
 library(FSelectorRcpp)
 library(recipes) #arbol de imputación con guardado
 datos <- read.csv("../data/musicData.csv",na.strings = c("", " ", "NA", "NaN"))
@@ -436,8 +435,7 @@ datos_test <- datos_tt[-idx_tt$Resample1,]
 dim(datos_test)
 ```
 
-Conjunto de validación NO LO USAMOS NUNCA MÁS HASTA EL FINAL DEL TODO
-DEL PROYECTO:
+Conjunto de validación que no se usa más hasta el final.
 
 ```{r}
 datos_val <- datos_preparticion[-idx_tt_val$Resample1,]
@@ -450,7 +448,8 @@ Ahora ya solo continuaremos con el conjunto de entrenamiento
 datos_train.
 
 En la primera parte del análisis, vimos que la variable bpm nos generaba
-dudas de su utilidad, por sus valores y por la gran cantidad de datos
+dudas de su utilidad, por sus ación NO LO USAMOS NUNCA MÁS HASTA EL
+FINAL DEL TODO DEL PROYECTO:valores y por la gran cantidad de datos
 faltantes que tenía. Procedemos a analizar esta variable para determinar
 si queremos eliminarla o mantenerla.
 
@@ -815,14 +814,57 @@ A partir de los resultados del análisis de la varianza (ANOVA), se
 concluye que sí existen diferencias estadísticamente significativas en
 los niveles de ansiedad entre los diferentes grupos de edad.
 
-Dado que el p-valor es considerablemente inferior al umbral habitual de
-0.05), se rechaza la hipótesis nula, lo que confirma que la edad es un
-factor que influye de manera relevante en la autoevaluación de la
-ansiedad.
+Dado que el p-valor es considerablemente inferior a 0.05, se rechaza la
+hipótesis nula, lo que confirma que la edad es un factor que influye de
+manera relevante en la autoevaluación de la ansiedad.
 
 ## - ¿Qué género de música es el más habitual? ¿Y el que menos?
 
+Para responder a esta pregunta vamos a realizar una tabla resumen y un
+gráfico de barras horizontal.
+
+```{r}
+# 1. Crear una tabla resumen con las frecuencias ordenadas
+tabla_generos <- datos %>%
+  count(genero_fav, sort = TRUE)
+
+# Mostrar la tabla
+tabla_generos
+
+# 2. Generar un gráfico de barras horizontal ordenado
+ggplot(datos %>% filter(!is.na(genero_fav)), aes(x = reorder(genero_fav, genero_fav, function(x) length(x)), fill = genero_fav)) +
+  geom_bar(show.legend = FALSE) +
+  coord_flip() + # Pone las barras en horizontal para leer mejor los nombres
+  labs(
+    title = "Frecuencia de Géneros Musicales Favoritos",
+    subtitle = "¿Cuál es el género más y menos habitual?",
+    x = "Género Musical",
+    y = "Número de Personas"
+  ) +
+  theme_minimal()
+```
+
+A partir del análisis de los datos de la encuesta, al observar la
+variable de género musical favorito, se aprecia claramente que el género
+preferido entre los participantes es el Rock, seguido por el Pop y que
+los géneros con menor representación como favoritos son el Latin y el
+Gospel.
+
 ## - ¿Existe algún género musical que tenga efecto positivo en alguna de las enfermedades mentales?
+
+```{r}
+# Calcular los niveles medios de ansiedad y depresión según el género musical favorito
+efecto_genero <- datos %>%
+  group_by(genero_fav) %>%
+  summarise(
+    Media_Ansiedad = round(mean(ansiedad, na.rm = TRUE), 2),
+    Media_Depresion = round(mean(depresion, na.rm = TRUE), 2),
+    Total_Personas = n()
+  ) %>%
+  arrange(desc(Media_Ansiedad))
+
+efecto_genero
+```
 
 ## - ¿Cuáles son los géneros más/menos escuchados entre la gente con depresión/ansiedad/ocd/insomnia?
 
@@ -919,10 +961,264 @@ cat("--- INSOMNIO ---\nMás escuchado:", head(insomnio_gen$genero_fav, 1),
 
 ## - ¿Existe algún género musical que tenga efecto positivo en alguna de las enfermedades mentales?
 
+Para responder a esta pregunta vamos a tomar a las personas que
+indicaron en la encuesta que la música tiene efecto positivo.
+
+```{r}
+# 1. Filtrar a las personas que indican que la música tiene un efecto positivo ("Improve")
+# y calcular la media de escucha de cada género en ese grupo
+efecto_positivo_generos <- datos %>%
+  filter(efectos == "Improve") %>%
+  select(starts_with("f_")) %>%
+  mutate(across(everything(), ~ case_when(
+    .x == "Never" ~ 0,
+    .x == "Rarely" ~ 1,
+    .x == "Sometimes" ~ 2,
+    .x == "Frequently" ~ 3,
+    .x == "Very frequently" ~ 4,
+    TRUE ~ NA_real_
+  ))) %>%
+  summarise(across(everything(), ~ mean(.x, na.rm = TRUE))) %>%
+  pivot_longer(everything(), names_to = "genero", values_to = "media_escucha") %>%
+  arrange(desc(media_escucha))
+
+# Mostrar la tabla resultante
+efecto_positivo_generos
+
+ggplot(efecto_positivo_generos, aes(x = reorder(genero, media_escucha), y = media_escucha, fill = genero)) +
+  geom_col(show.legend = FALSE) +
+  coord_flip() +
+  labs(
+    title = "Géneros más escuchados por personas con efecto positivo (Improve)",
+    x = "Género Musical",
+    y = "Media de Frecuencia de Escucha"
+  ) +
+  theme_minimal()
+```
+
+Al analizar si existe un género musical asociado a un efecto positivo en
+la salud mental, se observa de forma global que la gran mayoría de los
+encuestados que experimentan una mejoría (*Improve*) consumen
+habitualmente géneros como el Rock y el Pop. No obstante, esto guarda
+una estrecha relación con que son también los géneros más populares de
+la muestra.
+
+Al filtrar por patologías específicas como la ansiedad o la depresión,
+se denota que los encuestados recurren a sus géneros preferidos
+habituales, destacando el Rock, el Pop y el Metal en los niveles más
+altos de escucha.
+
+```{r}
+ansiedad_baja_generos <- datos %>%
+  filter(ansiedad <= 1) %>%
+  select(starts_with("f_")) %>%
+  mutate(across(everything(), ~ case_when(
+    .x == "Never" ~ 0,
+    .x == "Rarely" ~ 1,
+    .x == "Sometimes" ~ 2,
+    .x == "Frequently" ~ 3,
+    .x == "Very frequently" ~ 4,
+    TRUE ~ NA_real_
+  ))) %>%
+  summarise(across(everything(), ~ mean(.x, na.rm = TRUE))) %>%
+  pivot_longer(everything(), names_to = "genero", values_to = "media_ansiedad_baja") %>%
+  arrange(desc(media_ansiedad_baja))
+
+ansiedad_baja_generos
+
+depresion_baja_generos <- datos %>%
+  filter(depresion <= 1) %>%
+  select(starts_with("f_")) %>%
+  mutate(across(everything(), ~ case_when(
+    .x == "Never" ~ 0,
+    .x == "Rarely" ~ 1,
+    .x == "Sometimes" ~ 2,
+    .x == "Frequently" ~ 3,
+    .x == "Very frequently" ~ 4,
+    TRUE ~ NA_real_
+  ))) %>%
+  summarise(across(everything(), ~ mean(.x, na.rm = TRUE))) %>%
+  pivot_longer(everything(), names_to = "genero", values_to = "media_depresion_baja") %>%
+  arrange(desc(media_depresion_baja))
+
+depresion_baja_generos
+
+ocd_bajo_generos <- datos %>%
+  filter(ocd <= 1) %>%
+  select(starts_with("f_")) %>%
+  mutate(across(everything(), ~ case_when(
+    .x == "Never" ~ 0,
+    .x == "Rarely" ~ 1,
+    .x == "Sometimes" ~ 2,
+    .x == "Frequently" ~ 3,
+    .x == "Very frequently" ~ 4,
+    TRUE ~ NA_real_
+  ))) %>%
+  summarise(across(everything(), ~ mean(.x, na.rm = TRUE))) %>%
+  pivot_longer(everything(), names_to = "genero", values_to = "media_ocd_bajo") %>%
+  arrange(desc(media_ocd_bajo))
+
+ocd_bajo_generos
+
+insomnio_bajo_generos <- datos %>%
+  filter(insomnio <= 1) %>%
+  select(starts_with("f_")) %>%
+  mutate(across(everything(), ~ case_when(
+    .x == "Never" ~ 0,
+    .x == "Rarely" ~ 1,
+    .x == "Sometimes" ~ 2,
+    .x == "Frequently" ~ 3,
+    .x == "Very frequently" ~ 4,
+    TRUE ~ NA_real_
+  ))) %>%
+  summarise(across(everything(), ~ mean(.x, na.rm = TRUE))) %>%
+  pivot_longer(everything(), names_to = "genero", values_to = "media_insomnio_bajo") %>%
+  arrange(desc(media_insomnio_bajo))
+
+insomnio_bajo_generos
+```
+
 ## - ¿Cuáles son los géneros más/menos escuchados entre la gente con depresión/ansiedad/ocd/insomnia?
 
-Una vez se tiene una exploración global de los datos, comenzaremos a
-enfocar nuestro estudio en la predicción que buscamos analizar. En
-primer lugar, observamos que pueden existir variables que no nos
-proporcionen información al *target* como sería la plataforma e incluso
-el género favorito u horas de escucha.
+```{r}
+# Función auxiliar para traducir las frecuencias de texto a valores numéricos (0 a 4)
+convertir_freq <- function(x) {
+  case_when(
+    x == "Never" ~ 0,
+    x == "Rarely" ~ 1,
+    x == "Sometimes" ~ 2,
+    x == "Frequently" ~ 3,
+    x == "Very frequently" ~ 4,
+    TRUE ~ NA_real_
+  )
+}
+
+# --- 1. PERSONAS CON ANSIEDAD ALTA---
+ranking_ansiedad <- datos %>%
+  filter(ansiedad >= 3) %>%
+  select(starts_with("f_")) %>%
+  mutate(across(everything(), convertir_freq)) %>%
+  summarise(across(everything(), ~ mean(.x, na.rm = TRUE))) %>%
+  pivot_longer(everything(), names_to = "genero", values_to = "media_escucha") %>%
+  arrange(desc(media_escucha))
+
+print("Ranking en Ansiedad Alta:")
+print(ranking_ansiedad)
+
+
+# --- 2. PERSONAS CON DEPRESIÓN ALTA (ej. puntuación > 5) ---
+ranking_depresion <- datos %>%
+  filter(depresion >= 3) %>%
+  select(starts_with("f_")) %>%
+  mutate(across(everything(), convertir_freq)) %>%
+  summarise(across(everything(), ~ mean(.x, na.rm = TRUE))) %>%
+  pivot_longer(everything(), names_to = "genero", values_to = "media_escucha") %>%
+  arrange(desc(media_escucha))
+
+print("Ranking en Depresión Alta:")
+print(ranking_depresion)
+
+
+# --- 3. PERSONAS CON INSOMNIO ALTO (ej. puntuación > 4) ---
+ranking_insomnio <- datos %>%
+  filter(insomnio >=3) %>%
+  select(starts_with("f_")) %>%
+  mutate(across(everything(), convertir_freq)) %>%
+  summarise(across(everything(), ~ mean(.x, na.rm = TRUE))) %>%
+  pivot_longer(everything(), names_to = "genero", values_to = "media_escucha") %>%
+  arrange(desc(media_escucha))
+
+print("Ranking en Insomnio Alto:")
+print(ranking_insomnio)
+
+
+# --- 4. PERSONAS CON OCD ALTO (ej. puntuación > 3) ---
+ranking_ocd <- datos %>%
+  filter(ocd >= 3) %>%
+  select(starts_with("f_")) %>%
+  mutate(across(everything(), convertir_freq)) %>%
+  summarise(across(everything(), ~ mean(.x, na.rm = TRUE))) %>%
+  pivot_longer(everything(), names_to = "genero", values_to = "media_escucha") %>%
+  arrange(desc(media_escucha))
+
+print("Ranking en OCD Alto:")
+print(ranking_ocd)
+```
+
+Al analizar los hábitos de escucha específicos de los subgrupos con
+puntuaciones elevadas en patologías como ansiedad, depresión, insomnio y
+OCD, se observa que no existe una diferencia radical respecto al consumo
+general de la muestra. Los géneros más escuchados de manera habitual por
+estas personas siguen siendo el Rock y el Pop. Por el contrario, los
+géneros menos escuchados coinciden en los niveles más bajos de la
+escala, destacando el Gospel y el Latin.
+
+Una vez se tiene una exploración global de los datos, enfocaremos
+nuestro estudio en la predicción que buscamos analizar. Observamos que
+pueden existir variables que no nos proporcionen información al *target*
+como sería la plataforma e incluso el género favorito u horas de
+escucha.
+
+## Principales hallazgos y conclusiones
+
+A partir del análisis exploratorio del conjunto de datos sobre música y
+salud mental, podemos extraer los siguientes hallazgos relevantes en
+relación con los objetivos planteados:
+
+1.  **Relación entre la edad y los problemas de salud mental:** La
+    muestra que encuentra fuertemente sesgada hacia los tramos de edad
+    más jóvenes, concentrando la gran mayoría de las respuestas en
+    participantes de entre 10 y 30 años, con una escasa representación
+    en mayores de 50 años.
+
+    Los resultados del análisis de la varianza (ANOVA) confirmaron la
+    existencia de diferencias estadísticamente significativas en los
+    niveles de ansiedad según los grupos de edad. Los participantes más
+    jóvenes presentan las puntuaciones medias más elevadas,
+    especialmente en ansiedad y depresión, mientras que los tramos de
+    edad avanzada muestran distribuciones notablemente más bajas.
+
+2.  **Patrones de consumo musical:** Al analizar tanto las preferencias
+    declaradas como las frecuencias de escucha globales, el Rock se
+    posiciona con claridad como el género musical más habitual entre los
+    participantes, seguido muy de cerca por el Pop. En el extremo
+    opuesto, los géneros con menor representación y menores frecuencias
+    de escucha en la muestra son el Latin y el Gospel.
+
+3.  **Percepsión del efecto de la música y hábitos en perfiles
+    clínicos:** Una gran mayoría de los participantes percibe que la
+    escucha musical genera un impacto positivo o de mejora (*Improve*)
+    en su estado mental general.
+
+    Al analizar los subgrupos con puntuaciones elevadas en ansiedad,
+    depresión, insomnio y OCD, se observa que no existe una discrepancia
+    respecto al consumo general: los géneros más escuchados por estos
+    perfiles clínicos siguen siendo el Rock y el Pop.
+
+A la hora de interpretar los resultados anteriores, es necesario tener
+en cuenta las siguientes limitaciones:
+
+1.  **Correlación frente a causalidad:** al tratarse de un estudio
+    observacional los datos permiten identificar tendencias de consumo y
+    correlaciones (como el hecho de que personas con ansiedad escuchen
+    determinados géneros), pero no establecen relaciones de causalidad.
+    No es posible concluir que un género musical específico cure, cause
+    o reduzca directamente una patología mental.
+2.  **Sesgo de popularidad:** La predominancia del Rock y del Pop en los
+    perfiles con ansiedad o depresión responde fundamentalmente a un
+    efecto de popularidad (son los géneros más consumidos por toda la
+    muestra en general), y no necesariamente a una propiedad terapéutica
+    exclusiva de dichos géneros.
+3.  **Representatividad de la muestra:** Los datos provienen de una
+    muestra recopilada a través de redes sociales (como Discord o
+    Reddit) de manera voluntaria. Por lo tanto, los resultados son
+    representativos de los usuarios que respondieron al formulario, pero
+    no son generalizables a la población general debido a la falta de
+    equilibrio en los rangos de edad.
+4.  **Variables excluidas o en cuarentena:** variables planteadas
+    inicialmente como los pulsos por minuto (BPM), mostraban un alto
+    porcentaje de valores nulos y poca relevancia explicativa sobre la
+    variable respuesta tras los test de importancia. Los BPM representan
+    una métrica acústica y objetiva del ritmo. Al tener que excluir esta
+    variable el estudio renuncia a analizar si la velocidad o el tempo
+    de la música tiene un impacto real en las enfermedades.
