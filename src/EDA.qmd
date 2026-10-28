@@ -121,15 +121,22 @@ datos <- read.csv("../data/musicData.csv",na.strings = c("", " ", "NA", "NaN"))
 ```
 
 Antes de iniciar el análisis, modificamos los nombres de las variables
-al español y de forma simplificada para poder llamarlos.
+al español y de forma simplificada para un seguimiento más sencillo.
 
 ```{r}
 colnames(datos) <- c("fecha","edad", "plataforma", "horas_pd", "trabajando", "instrumentista", "musico", "genero_fav", "explorador", "extranjero", "bpm", "f_clasica", "f_country", "f_edm", "f_folk", "f_gospel", "f_hiphop", "f_jazz", "f_kpop", "f_latin", "f_lofi", "f_metal","f_pop", "f_ryb", "f_rap", "f_rock", "f_vgm", "ansiedad", "depresion", "insomnio", "ocd","efectos","permisos")
 ```
 
-Presentar un esquema o plan inicial de cómo se va a abordar la
-exploración de los datos y qué aspectos se considera necesario
-investigar. Aquí vamos poniendo lo que vamos a ir haciendo
+Presentar nuestro esquema:
+Primero realizaremos un primer acercamiento general a los datos totales sin modificarlos, viendo cada variable a ver si detectamos problemas generales e información general de nuestras var.
+
+Luego haremos las modificaciones prepartición que no afecten a nuestro estudio y que no puedan estar basadas en sesgos. 
+
+Realizaremos la partición y empezaremos a analizar las variables con las que podamos tener dudas para ver su validez en relación a nuestra variable objetivo. 
+
+Una vez resueltas las sospechas con las variables dudosas, procederemos a analizar los datos faltantes de las variables y realizaremos una imputación por arbol de regresión, para el que guardaremos la receta para usar posteriormente en el validation. 
+
+Realizaremos un análisis sobre nuestro conjunto train imputado en busca de sacar más información y de responder nuestras preguntas de partida. Buscando encontrar estrategias para proseguir nuestro proyecto, como clusters, ingeniería de variables, etc.
 
 ## Preguntas de partida
 
@@ -146,8 +153,9 @@ entre la gente con depresión/ansiedad/ocd/insomnia?
 ## Proceso de exploración
 
 Tras haber renombrado las variables procedemos a realizar el proceso de
-exploración de nuestros datos. Empezamos importando algunas librerías
-que utilizaremos y viendo la dimensión de nuestros datos
+exploración de nuestros datos. 
+
+Empezamos viendo la dimensión de nuestros datos y su encabezado.
 
 ```{r}
 dim(datos)
@@ -167,18 +175,19 @@ Podemos observar que hay unos vacios en los datos, que debemos
 investigar. Ejemplo de ello en el str, es en efectos, que tenemos las
 dos primeras entradas vacias (NA).
 
-Vamos a ir revisando las variables una a una.
+#### Vamos a ir revisando las variables una a una.
 
-Fecha: Observamos que cada persona tiene una fecha distinta, sumado a
-que por el contexto de nuestra investigación, la fecha de entrega del
+**Fecha:** Observamos que cada persona tiene una fecha distinta. 
+Teniendo en cuenta el contexto de nuestra investigación, la fecha de entrega del
 formulario no va a tener relevancia en los resultados, por lo que
-podemos concluir que esta variable es una candidata a ser eliminada.
+podemos concluir que esta variable es una candidata a ser eliminada, ya que no 
+aportará a nuestra variable respuesta.
 
 ```{r}
 table(datos$fecha, useNA = 'always')
 ```
 
-Variable edad: En edad vemos que tenemos un valor N/A, por lo demás
+**Variable edad:** En edad vemos que tenemos un valor N/A, por lo demás
 tenemos diversas edades comprendidas entre 10 y 89 años, con una media
 de 25,2 años y una mediana de 21 años.
 
@@ -194,10 +203,10 @@ edad_min <- min(datos$edad, na.rm = TRUE)
 print(edad_min)
 ```
 
-Variable plataforma: vemos que hay un valor no rellenado NA. Por otro
+**Variable plataforma:** vemos que hay un valor no rellenado NA. Por otro
 lado, podemos ver que esta varible es de tipo categórico y cuyas
 entradas son del tipo character, para evitarnos problemas, vamos a
-transformarla a tipo factor más adelante.
+transformarla a tipo factor junto con todas las demás que sean de tipo char.
 
 ```{r}
 table(datos$plataforma, useNA = 'always')
@@ -215,7 +224,7 @@ datos_factor <- datos %>% mutate_if(is.character, as.factor)  %>%
     ~ factor(.x, levels = c("Never", "Rarely", "Sometimes", "Very frequently"), ordered = TRUE)))
 ```
 
-Variable horas_pd: Tenemos diversas cantidades de horas comprendidas
+**Variable horas_pd:** Tenemos diversas cantidades de horas comprendidas
 entre 0 y 24 horas, con una media de 3,57 horas y una mediana de 3
 horas.
 
@@ -231,7 +240,7 @@ horas_min <- min(datos_factor$horas_pd, na.rm = TRUE)
 print(horas_min)
 ```
 
-Variables trabajando, instrumentista, músico, explorador y extranjero:
+**Variables trabajando, instrumentista, músico, explorador y extranjero:**
 Vemos que en 4 de estas 5 variables que se pueden tratar como binarias
 al ser si o no, tenemos algunos datos faltantes como NA.
 
@@ -248,7 +257,7 @@ print("Variable extranjero:")
 table(datos_factor$extranjero, useNA = 'always')
 ```
 
-Variable genero_fav: Vemos que tenemos 16 opciones para esta variable
+**Variable genero_fav:** Vemos que tenemos 16 opciones para esta variable
 categórica, pero nos llama la atención que hay ciertos géneros de música
 que son el favorito de poca gente, lo que puede hacer que al dividir la
 muestra en tres para hacer el estudio, no nos aporten
@@ -260,7 +269,7 @@ géneros".
 table(datos_factor$genero_fav, useNA = 'always')
 ```
 
-Variable bpm: Tenemos que los bpm van comprendidos desde 0 hasta
+**Variable bpm:** Tenemos que los bpm van comprendidos desde 0 hasta
 999999999, con media 1589948 y mediana 120. Esta diferencia entre la
 media y la mediana se debe a que tenemos valores muy bajos entre 0 y 100
 y luego algunos valores más altos como 624 o 999999999, lo que hace que
@@ -275,6 +284,8 @@ que aumenta nuestra desconfianza en esta variable. Posteriormente
 continuaremos el análisis sobre esta variable para determinar si la
 mantenemos o eliminamos de nuestro estudio.
 
+Aun así, al ser solo la primera aproximación a las variables, dejaremos el análisis en profundidad de esta variable para más adelante.
+
 ```{r}
 table(datos_factor$bpm, useNA = 'always')
 media_bpm <- mean(datos_factor$bpm, na.rm = TRUE)
@@ -287,7 +298,7 @@ bpm_min <- min(datos_factor$bpm, na.rm = TRUE)
 cat("El mínimo es",bpm_min,"\n")
 ```
 
-Variables frecuencias: Tenemos este conjunto de variables categóricas
+**Variables frecuencias:** Tenemos este conjunto de variables categóricas
 ordinales y tras ver los tables parece que no tenemos huecos faltantes y
 está todo en orden.
 
@@ -329,7 +340,7 @@ table(datos_factor$f_vgm, useNA = 'always')
 Continuamos ahora analizando las variables objetivos: ansiedad,
 depresión, insomnio y ocd.
 
-Variable ansiedad:
+**Variable ansiedad:**
 
 ```{r}
 table(datos_factor$ansiedad, useNA = 'always')
@@ -339,7 +350,7 @@ cat("La media es", media_ansiedad, "\n")
 cat("La mediana es",mediana_ansiedad, "\n")
 ```
 
-Variable depresión:
+**Variable depresión:**
 
 ```{r}
 table(datos_factor$depresion, useNA = 'always')
@@ -349,7 +360,7 @@ cat("La media es", media_depresion, "\n")
 cat("La mediana es",mediana_depresion, "\n")
 ```
 
-Variable insomnio:
+**Variable insomnio:**
 
 ```{r}
 table(datos_factor$insomnio, useNA = 'always')
@@ -359,7 +370,7 @@ cat("La media es", media_insomnio, "\n")
 cat("La mediana es",mediana_insomnio, "\n")
 ```
 
-Variable ocd:
+**Variable ocd:**
 
 ```{r}
 table(datos_factor$ocd, useNA = 'always')
@@ -369,14 +380,14 @@ cat("La media es", media_ocd, "\n")
 cat("La mediana es",mediana_ocd, "\n")
 ```
 
-Variable efectos: Como vimos al inicio en esta variable tenemos 8 NA,
+**Variable efectos:** Como vimos al inicio en esta variable tenemos 8 NA,
 que nos tocará ver como tratar más adelante.
 
 ```{r}
 table(datos_factor$efectos, useNA = 'always')
 ```
 
-Variable permisos: Esta variable al representar el permiso de usar los
+**Variable permisos:** Esta variable al representar el permiso de usar los
 datos del formulario, fuerza a que todas las respuestas sean que
 afirmativas, por lo que procederemos a eliminarla posteriormente, pues
 es una clara candidata a ser eliminada, pues no aportará tenerla en
@@ -403,7 +414,7 @@ datos_preparticion <- datos_factor[, -c(1, ncol(datos_factor))]
 head(datos_preparticion)
 ```
 
-## Partición de los datos
+### Partición de los datos
 
 Dada la cantidad de datos decidimos realizar una partición train
 (0.8·65)-test (0.8·0.35) -validación (0.2).
@@ -435,24 +446,23 @@ datos_test <- datos_tt[-idx_tt$Resample1,]
 dim(datos_test)
 ```
 
-Conjunto de validación que no se usa más hasta el final.
+Conjunto de validación que no usaremos más hasta el final.
 
 ```{r}
 datos_val <- datos_preparticion[-idx_tt_val$Resample1,]
 dim(datos_val)
 ```
 
-## Continuamos con el EDA
+### Continuamos con el EDA
 
 Ahora ya solo continuaremos con el conjunto de entrenamiento
 datos_train.
 
 En la primera parte del análisis, vimos que la variable bpm nos generaba
-dudas de su utilidad, por sus ación NO LO USAMOS NUNCA MÁS HASTA EL
-FINAL DEL TODO DEL PROYECTO:valores y por la gran cantidad de datos
-faltantes que tenía. Procedemos a analizar esta variable para determinar
-si queremos eliminarla o mantenerla.
+dudas de su utilidad, por sus valores y por la gran cantidad de datos
+faltantes que tenía. 
 
+Procedemos a analizar esta variable para determinar si va a sernos util o debemos dejarla en cuarentena por ahora.
 ```{r}
 vis_miss(datos_train)
 gg_miss_var(datos_train)
@@ -462,14 +472,13 @@ Como podemos observar el 13% de las respuestas de esa variable son un
 valor nulo.
 
 ```{r}
-# Ver resumen estadístico básico (mínimo, máximo, cuartiles)
+#Ver resumen estadístico básico (mínimo, máximo, cuartiles)
 summary(datos_train$bpm)
-# Contar valores en cada rango
+#Contar valores en cada rango
 por_encima_220 <- sum(datos_train$bpm > 220, na.rm = TRUE)
 entre_40_y_220 <- sum(datos_train$bpm >= 40 & datos_train$bpm <= 220, na.rm = TRUE)
 por_debajo_40  <- sum(datos_train$bpm < 40, na.rm = TRUE)
 
-# Mostrar resultados
 cat("Mayores a 220 BPM:", por_encima_220, "\n")
 cat("Entre 40 y 220 BPM:", entre_40_y_220, "\n")
 cat("Menores a 40 BPM:", por_debajo_40, "\n")
@@ -487,15 +496,15 @@ stripchart(datos_train$bpm,
            pch = 19, 
            col = rgb(0, 0, 1, 0.3))
 ```
-
+####Información del "entendido/experto"
 Los valores típicos de bpm en la música oscilan habitualmente entre los
 40 y los 220 bpm, pero podemos ver que tenemos 4 valores atípicos por
 debajo de 40 y 1 por encima de 220, además de tener en la partición 50
-NA. Claramente la media está siendo afectada por el valor atípico
-superior, pues es varias escalas por encima. Vamos a transformar las
-entradas atípicas en NA por ahora, considerando que se han rellenado con
-desconocimiento, para poder analizar de forma más sencilla, si debemos
-mantener o no la variable bpm.
+NA. 
+Claramente la media está siendo afectada por el valor atípico
+superior, pues es varias escalas por encima.
+
+Vamos a transformar las entradas atípicas en NA por ahora, considerando que se han rellenado con desconocimiento, para poder analizar de forma más sencilla, si debemos mantener o no la variable bpm.
 
 ```{r}
 #Creamos la copia para guardar el previo al cambio
@@ -521,7 +530,6 @@ ggplot(subset(datos_train, !is.na(bpm)), aes(y = bpm)) +
   labs(title = "Boxplot de BPM limpio de valores anómalos (Escala 0 - 230)", y = "BPM") +
   theme_minimal()
 ```
-
 Nos sale un porcentaje que puede ser bastante significativo, vamos a
 profundizar el análisis. Para ello vamos a ver un boxplot con efectos,
 hacer un anova y utilizar métodos que nos digan la ganancia de
@@ -541,12 +549,12 @@ summary(modelo_anova)
 information_gain(efectos ~ bpm, data = datos_train)
 ```
 
-Resultado boxplot: Vemos que tienen medianas similares, entorno a 120
+**Resultado boxplot:** Vemos que tienen medianas similares, entorno a 120
 ,en los tres outputs de la variable respuesta, sumado a que parecen
 tener distribuciones similares, es el primer indicio de que no aporta
 mucho esta variable.
 
-Anova y test de aporte: al realizar un anova, nos da un p-valor muy alto
+**Anova y test de aporte:** al realizar un anova, nos da un p-valor muy alto
 de 0,87, por lo que no hay evidencia suficiente para rechazar la
 hipótesis nula y por tanto, no hay diferencias significativas entre las
 medias de los grupos. Y encima el test de importancia nos dice que a lo
@@ -555,11 +563,11 @@ es despreciable.
 
 Por todos estos resultados junto con la gran cantidad de datos faltantes
 de esta variable, podemos concluir que esta variable parece no
-aportarnos mucho, por ello la dejaremos en cuarentena. Y posteriormente
+aportarnos mucho, por ello la dejaremos en **cuarentena**. Y posteriormente
 iremos comparando si nos aporta.
 
 ```{r}
-#Eliminamos bpm
+#"Eliminamos/dejamos en cuarentena bpm"
 datos_train_sinbpm <- datos_train %>% 
   select(-bpm)
 head(datos_train_sinbpm)
