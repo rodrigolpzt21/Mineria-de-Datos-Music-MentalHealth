@@ -17,3 +17,5 @@ datos_train (datos_train pero con algunas instancias atipicas en bpm pasadas a N
 datos_train_sinbpm <-- eliminamos para aislar de la variable bpm , datos_train (sin bpm)
 
 datos_train_imp <-- el anterior pero con datos imputados para los demás NA 
+
+datosEdad <-- datos_train_imp con edades agrupadas por bloques 

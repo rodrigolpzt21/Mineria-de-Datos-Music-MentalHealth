@@ -692,6 +692,34 @@ genero_menos_habitual <- conteo_generos %>% slice(n())
 cat("El género más habitual es:", genero_mas_habitual$genero_fav, "con", genero_mas_habitual$n, "personas.\n")
 cat("El género menos habitual es:", genero_menos_habitual$genero_fav, "con", genero_menos_habitual$n, "personas.\n")
 ```
+Podemos apreciar que el rock es el género que más se repite como el favorito de la gente y el menos habitual sin embargo son géneros minoritarios representados por la categoría otros géneros.
+
+Para visualizar mejor los datos de género favorito vamos a realizar una tabla resumen y un
+gráfico de barras horizontal.
+
+```{r}
+#Crear una tabla resumen con las frecuencias ordenadas
+tabla_generos <- datos_train_imp %>%
+  count(genero_fav, sort = TRUE)
+#Mostrar la tabla
+tabla_generos
+#Generar un gráfico de barras horizontal ordenado
+ggplot(datos_train_imp %>% filter(!is.na(genero_fav)), aes(x = reorder(genero_fav, genero_fav, function(x) length(x)), fill = genero_fav)) +
+  geom_bar(show.legend = FALSE) +
+  coord_flip() + # Pone las barras en horizontal para leer mejor los nombres
+  labs(
+    title = "Frecuencia de Géneros Musicales Favoritos",
+    subtitle = "¿Cuál es el género más y menos habitual?",
+    x = "Género Musical",
+    y = "Número de Personas"
+  ) +
+  theme_minimal()
+```
+
+A partir del análisis de los datos de la encuesta, al observar la
+variable de género musical favorito, se aprecia claramente que el género
+preferido entre los participantes es el Rock, seguido por el Pop y que
+los géneros con menor representación como favoritos son el folk y el conjunto de otros géneros.
 
 ## - ¿Existe alguna relación entre grupos de edades y el padecimiento de alguna enfermedad mental?
 
@@ -706,8 +734,9 @@ table(datosAgrupEdad$GrupoEdad)
 prop.table(table(datosAgrupEdad$GrupoEdad))
 
 ```
-
-Por lo que decidiremos agrupar los datos de las personas con edad de
+Como vemos la mayoría de las personas están en los primeros tres bloques de 10 años,
+mientras que a partir de 40 años no tenemos apenas personas en nuestra muestra.
+Por lo que decidiremos agrupar los bloques de las personas con edad de
 cuarenta en adelante para que así sea más significativo en nuestro
 estudio.
 
@@ -816,7 +845,7 @@ representación de encuestados en los tramos superiores de edad. -->
 
 ```{r}
 # Pasamos los datos a formato largo para facilitar la comparación por enfermedad
-datos_largo <- datosAgrupEdad %>%
+datos_largo <- datosEdad %>%
   pivot_longer(cols = c(ansiedad, depresion, insomnio, ocd),
                names_to = "Enfermedad", values_to = "Puntuacion")
 
@@ -855,17 +884,17 @@ más claros, lo que indica que sus puntuaciones medias de autoevaluación
 son considerablemente más bajas en la mayoría de los grupos.
 
 ```{r}
-modelo_aov1 <- aov(ansiedad ~ GrupoEdad, data = datosAgrupEdad)
+modelo_aov1 <- aov(ansiedad ~ GrupoEdad, data = datosEdad)
 summary(modelo_aov1)
 TukeyHSD(modelo_aov1)
 
-modelo_aov2 <- aov(depresion ~ GrupoEdad, data = datosAgrupEdad)
+modelo_aov2 <- aov(depresion ~ GrupoEdad, data = datosEdad)
 summary(modelo_aov2)
 
-modelo_aov3 <- aov(ocd ~ GrupoEdad, data = datosAgrupEdad)
+modelo_aov3 <- aov(ocd ~ GrupoEdad, data = datosEdad)
 summary(modelo_aov3)
 
-modelo_aov4 <- aov(insomnio ~ GrupoEdad, data = datosAgrupEdad)
+modelo_aov4 <- aov(insomnio ~ GrupoEdad, data = datosEdad)
 summary(modelo_aov4)
 ```
 
@@ -876,38 +905,6 @@ los niveles de ansiedad entre los diferentes grupos de edad.
 Dado que el p-valor es considerablemente inferior a 0.05, se rechaza la
 hipótesis nula, lo que confirma que la edad es un factor que influye de
 manera relevante en la autoevaluación de la ansiedad.
-
-## - ¿Qué género de música es el más habitual? ¿Y el que menos?
-
-Para responder a esta pregunta vamos a realizar una tabla resumen y un
-gráfico de barras horizontal.
-
-```{r}
-# 1. Crear una tabla resumen con las frecuencias ordenadas
-tabla_generos <- datos %>%
-  count(genero_fav, sort = TRUE)
-
-# Mostrar la tabla
-tabla_generos
-
-# 2. Generar un gráfico de barras horizontal ordenado
-ggplot(datos %>% filter(!is.na(genero_fav)), aes(x = reorder(genero_fav, genero_fav, function(x) length(x)), fill = genero_fav)) +
-  geom_bar(show.legend = FALSE) +
-  coord_flip() + # Pone las barras en horizontal para leer mejor los nombres
-  labs(
-    title = "Frecuencia de Géneros Musicales Favoritos",
-    subtitle = "¿Cuál es el género más y menos habitual?",
-    x = "Género Musical",
-    y = "Número de Personas"
-  ) +
-  theme_minimal()
-```
-
-A partir del análisis de los datos de la encuesta, al observar la
-variable de género musical favorito, se aprecia claramente que el género
-preferido entre los participantes es el Rock, seguido por el Pop y que
-los géneros con menor representación como favoritos son el Latin y el
-Gospel.
 
 ## - ¿Existe algún género musical que tenga efecto positivo en alguna de las enfermedades mentales?
 
