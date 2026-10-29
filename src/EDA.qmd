@@ -127,16 +127,26 @@ al español y de forma simplificada para un seguimiento más sencillo.
 colnames(datos) <- c("fecha","edad", "plataforma", "horas_pd", "trabajando", "instrumentista", "musico", "genero_fav", "explorador", "extranjero", "bpm", "f_clasica", "f_country", "f_edm", "f_folk", "f_gospel", "f_hiphop", "f_jazz", "f_kpop", "f_latin", "f_lofi", "f_metal","f_pop", "f_ryb", "f_rap", "f_rock", "f_vgm", "ansiedad", "depresion", "insomnio", "ocd","efectos","permisos")
 ```
 
-Presentar nuestro esquema:
-Primero realizaremos un primer acercamiento general a los datos totales sin modificarlos, viendo cada variable a ver si detectamos problemas generales e información general de nuestras var.
+Presentar nuestro esquema: Primero realizaremos un primer acercamiento
+general a los datos totales sin modificarlos, viendo cada variable a ver
+si detectamos problemas generales e información general de nuestras var.
 
-Luego haremos las modificaciones prepartición que no afecten a nuestro estudio y que no puedan estar basadas en sesgos. 
+Luego haremos las modificaciones prepartición que no afecten a nuestro
+estudio y que no puedan estar basadas en sesgos.
 
-Realizaremos la partición y empezaremos a analizar las variables con las que podamos tener dudas para ver su validez en relación a nuestra variable objetivo. 
+Realizaremos la partición y empezaremos a analizar las variables con las
+que podamos tener dudas para ver su validez en relación a nuestra
+variable objetivo.
 
-Una vez resueltas las sospechas con las variables dudosas, procederemos a analizar los datos faltantes de las variables y realizaremos una imputación por arbol de regresión, para el que guardaremos la receta para usar posteriormente en el validation. 
+Una vez resueltas las sospechas con las variables dudosas, procederemos
+a analizar los datos faltantes de las variables y realizaremos una
+imputación por arbol de regresión, para el que guardaremos la receta
+para usar posteriormente en el validation.
 
-Realizaremos un análisis sobre nuestro conjunto train imputado en busca de sacar más información y de responder nuestras preguntas de partida. Buscando encontrar estrategias para proseguir nuestro proyecto, como clusters, ingeniería de variables, etc.
+Realizaremos un análisis sobre nuestro conjunto train imputado en busca
+de sacar más información y de responder nuestras preguntas de partida.
+Buscando encontrar estrategias para proseguir nuestro proyecto, como
+clusters, ingeniería de variables, etc.
 
 ## Preguntas de partida
 
@@ -153,7 +163,7 @@ entre la gente con depresión/ansiedad/ocd/insomnia?
 ## Proceso de exploración
 
 Tras haber renombrado las variables procedemos a realizar el proceso de
-exploración de nuestros datos. 
+exploración de nuestros datos.
 
 Empezamos viendo la dimensión de nuestros datos y su encabezado.
 
@@ -177,11 +187,11 @@ dos primeras entradas vacias (NA).
 
 #### Vamos a ir revisando las variables una a una.
 
-**Fecha:** Observamos que cada persona tiene una fecha distinta. 
-Teniendo en cuenta el contexto de nuestra investigación, la fecha de entrega del
-formulario no va a tener relevancia en los resultados, por lo que
-podemos concluir que esta variable es una candidata a ser eliminada, ya que no 
-aportará a nuestra variable respuesta.
+**Fecha:** Observamos que cada persona tiene una fecha distinta.
+Teniendo en cuenta el contexto de nuestra investigación, la fecha de
+entrega del formulario no va a tener relevancia en los resultados, por
+lo que podemos concluir que esta variable es una candidata a ser
+eliminada, ya que no aportará a nuestra variable respuesta.
 
 ```{r}
 table(datos$fecha, useNA = 'always')
@@ -203,10 +213,11 @@ edad_min <- min(datos$edad, na.rm = TRUE)
 print(edad_min)
 ```
 
-**Variable plataforma:** vemos que hay un valor no rellenado NA. Por otro
-lado, podemos ver que esta varible es de tipo categórico y cuyas
+**Variable plataforma:** vemos que hay un valor no rellenado NA. Por
+otro lado, podemos ver que esta varible es de tipo categórico y cuyas
 entradas son del tipo character, para evitarnos problemas, vamos a
-transformarla a tipo factor junto con todas las demás que sean de tipo char.
+transformarla a tipo factor junto con todas las demás que sean de tipo
+char.
 
 ```{r}
 table(datos$plataforma, useNA = 'always')
@@ -240,9 +251,9 @@ horas_min <- min(datos_factor$horas_pd, na.rm = TRUE)
 print(horas_min)
 ```
 
-**Variables trabajando, instrumentista, músico, explorador y extranjero:**
-Vemos que en 4 de estas 5 variables que se pueden tratar como binarias
-al ser si o no, tenemos algunos datos faltantes como NA.
+**Variables trabajando, instrumentista, músico, explorador y
+extranjero:** Vemos que en 4 de estas 5 variables que se pueden tratar
+como binarias al ser si o no, tenemos algunos datos faltantes como NA.
 
 ```{r}
 print("Variable trabajando:")
@@ -257,10 +268,10 @@ print("Variable extranjero:")
 table(datos_factor$extranjero, useNA = 'always')
 ```
 
-**Variable genero_fav:** Vemos que tenemos 16 opciones para esta variable
-categórica, pero nos llama la atención que hay ciertos géneros de música
-que son el favorito de poca gente, lo que puede hacer que al dividir la
-muestra en tres para hacer el estudio, no nos aporten
+**Variable genero_fav:** Vemos que tenemos 16 opciones para esta
+variable categórica, pero nos llama la atención que hay ciertos géneros
+de música que son el favorito de poca gente, lo que puede hacer que al
+dividir la muestra en tres para hacer el estudio, no nos aporten
 significativamente, por lo que posteriormente agruparemos los géneros
 que tengan menos de 20 elegidos en una categoría que llamaremos "Otros
 géneros".
@@ -284,7 +295,8 @@ que aumenta nuestra desconfianza en esta variable. Posteriormente
 continuaremos el análisis sobre esta variable para determinar si la
 mantenemos o eliminamos de nuestro estudio.
 
-Aun así, al ser solo la primera aproximación a las variables, dejaremos el análisis en profundidad de esta variable para más adelante.
+Aun así, al ser solo la primera aproximación a las variables, dejaremos
+el análisis en profundidad de esta variable para más adelante.
 
 ```{r}
 table(datos_factor$bpm, useNA = 'always')
@@ -298,9 +310,9 @@ bpm_min <- min(datos_factor$bpm, na.rm = TRUE)
 cat("El mínimo es",bpm_min,"\n")
 ```
 
-**Variables frecuencias:** Tenemos este conjunto de variables categóricas
-ordinales y tras ver los tables parece que no tenemos huecos faltantes y
-está todo en orden.
+**Variables frecuencias:** Tenemos este conjunto de variables
+categóricas ordinales y tras ver los tables parece que no tenemos huecos
+faltantes y está todo en orden.
 
 ```{r}
 print("Variable f_clasica:")
@@ -380,15 +392,15 @@ cat("La media es", media_ocd, "\n")
 cat("La mediana es",mediana_ocd, "\n")
 ```
 
-**Variable efectos:** Como vimos al inicio en esta variable tenemos 8 NA,
-que nos tocará ver como tratar más adelante.
+**Variable efectos:** Como vimos al inicio en esta variable tenemos 8
+NA, que nos tocará ver como tratar más adelante.
 
 ```{r}
 table(datos_factor$efectos, useNA = 'always')
 ```
 
-**Variable permisos:** Esta variable al representar el permiso de usar los
-datos del formulario, fuerza a que todas las respuestas sean que
+**Variable permisos:** Esta variable al representar el permiso de usar
+los datos del formulario, fuerza a que todas las respuestas sean que
 afirmativas, por lo que procederemos a eliminarla posteriormente, pues
 es una clara candidata a ser eliminada, pues no aportará tenerla en
 cuenta para nuestro proyecto.
@@ -460,9 +472,11 @@ datos_train.
 
 En la primera parte del análisis, vimos que la variable bpm nos generaba
 dudas de su utilidad, por sus valores y por la gran cantidad de datos
-faltantes que tenía. 
+faltantes que tenía.
 
-Procedemos a analizar esta variable para determinar si va a sernos util o debemos dejarla en cuarentena por ahora.
+Procedemos a analizar esta variable para determinar si va a sernos util
+o debemos dejarla en cuarentena por ahora.
+
 ```{r}
 vis_miss(datos_train)
 gg_miss_var(datos_train)
@@ -496,15 +510,17 @@ stripchart(datos_train$bpm,
            pch = 19, 
            col = rgb(0, 0, 1, 0.3))
 ```
-####Información del "entendido/experto"
-Los valores típicos de bpm en la música oscilan habitualmente entre los
-40 y los 220 bpm, pero podemos ver que tenemos 4 valores atípicos por
-debajo de 40 y 1 por encima de 220, además de tener en la partición 50
-NA. 
-Claramente la media está siendo afectada por el valor atípico
-superior, pues es varias escalas por encima.
 
-Vamos a transformar las entradas atípicas en NA por ahora, considerando que se han rellenado con desconocimiento, para poder analizar de forma más sencilla, si debemos mantener o no la variable bpm.
+####Información del "entendido/experto" Los valores típicos de bpm en la
+música oscilan habitualmente entre los 40 y los 220 bpm, pero podemos
+ver que tenemos 4 valores atípicos por debajo de 40 y 1 por encima de
+220, además de tener en la partición 50 NA. Claramente la media está
+siendo afectada por el valor atípico superior, pues es varias escalas
+por encima.
+
+Vamos a transformar las entradas atípicas en NA por ahora, considerando
+que se han rellenado con desconocimiento, para poder analizar de forma
+más sencilla, si debemos mantener o no la variable bpm.
 
 ```{r}
 #Creamos la copia para guardar el previo al cambio
@@ -530,6 +546,7 @@ ggplot(subset(datos_train, !is.na(bpm)), aes(y = bpm)) +
   labs(title = "Boxplot de BPM limpio de valores anómalos (Escala 0 - 230)", y = "BPM") +
   theme_minimal()
 ```
+
 Nos sale un porcentaje que puede ser bastante significativo, vamos a
 profundizar el análisis. Para ello vamos a ver un boxplot con efectos,
 hacer un anova y utilizar métodos que nos digan la ganancia de
@@ -549,13 +566,13 @@ summary(modelo_anova)
 information_gain(efectos ~ bpm, data = datos_train)
 ```
 
-**Resultado boxplot:** Vemos que tienen medianas similares, entorno a 120
-,en los tres outputs de la variable respuesta, sumado a que parecen
+**Resultado boxplot:** Vemos que tienen medianas similares, entorno a
+120 ,en los tres outputs de la variable respuesta, sumado a que parecen
 tener distribuciones similares, es el primer indicio de que no aporta
 mucho esta variable.
 
-**Anova y test de aporte:** al realizar un anova, nos da un p-valor muy alto
-de 0,87, por lo que no hay evidencia suficiente para rechazar la
+**Anova y test de aporte:** al realizar un anova, nos da un p-valor muy
+alto de 0,87, por lo que no hay evidencia suficiente para rechazar la
 hipótesis nula y por tanto, no hay diferencias significativas entre las
 medias de los grupos. Y encima el test de importancia nos dice que a lo
 sumo aporta un 0,56% de la información en la variable respuesta. Lo que
@@ -563,8 +580,8 @@ es despreciable.
 
 Por todos estos resultados junto con la gran cantidad de datos faltantes
 de esta variable, podemos concluir que esta variable parece no
-aportarnos mucho, por ello la dejaremos en **cuarentena**. Y posteriormente
-iremos comparando si nos aporta.
+aportarnos mucho, por ello la dejaremos en **cuarentena**. Y
+posteriormente iremos comparando si nos aporta.
 
 ```{r}
 #"Eliminamos/dejamos en cuarentena bpm"
@@ -634,10 +651,12 @@ print(matriz_cor)
 corrplot(matriz_cor, method = "color", type = "upper", 
          tl.col = "black", tl.srt = 45, addCoef.col = "black")
 ```
-La correlación que más llama la atención es la de ansiedad y depresión que es la más alta entre todas aunque no deja de ser solo de 0,51.
 
-Seguimos con un diagrama de cajas para ver la relación de efectos con la cantidad de
-horas de escucha de música.
+La correlación que más llama la atención es la de ansiedad y depresión
+que es la más alta entre todas aunque no deja de ser solo de 0,51.
+
+Seguimos con un diagrama de cajas para ver la relación de efectos con la
+cantidad de horas de escucha de música.
 
 ```{r}
 #Diagrama de cajas 
@@ -650,9 +669,11 @@ ggplot(datos_train_imp, aes(x = efectos, y = horas_pd, fill = efectos)) +
   theme(legend.position = "none")
 
 ```
-Vemos que entre improve y no effect tenemos un boxplot bastante similar con medianas similares.
-Por otro lado los que empeoran parecen escuchar algo menos de música, aunque habría que profundizar, 
-antes de sacar conclusiones.
+
+Vemos que entre improve y no effect tenemos un boxplot bastante similar
+con medianas similares. Por otro lado los que empeoran parecen escuchar
+algo menos de música, aunque habría que profundizar, antes de sacar
+conclusiones.
 
 Por otro lado podremos comenzar a estudiar algunas de las preguntas
 hechas al comienzo del trabajo:
@@ -687,7 +708,7 @@ prop.table(table(datosAgrupEdad$GrupoEdad))
 ```
 
 Por lo que decidiremos agrupar los datos de las personas con edad de
-sesenta en adelante para que así sea más significativo en nuestro
+cuarenta en adelante para que así sea más significativo en nuestro
 estudio.
 
 ```{r}
@@ -696,9 +717,7 @@ datosEdad<-datos_train_imp %>% mutate(GrupoEdad=case_when(
   edad>=10 & edad<20 ~ "[10,20)",
   edad>=20 & edad<30 ~ "[20,30)",
   edad>=30 & edad<40 ~ "[30,40)",
-  edad>=40 & edad<50 ~ "[40,50)",
-  edad>=50 & edad<60 ~ "[50,60)",
-  edad>=60  ~ "60 o más",
+  edad>=40  ~ "40 o más",
   TRUE~NA_character_
   ))
 
@@ -765,16 +784,33 @@ ggplot(datosdensidad, aes(x = `Escala de autoevaluacion`, colour = Trastorno, fi
 
 ```
 
-A partir del análisis de las distribuciones por edad, se concluye que sí
-existe una relación entre los grupos de edad y la autoevaluación de los
-problemas de salud mental. Los participantes más jóvenes, que concentran
-la gran mayoría de la muestra (principalmente entre los 10 y 30 años),
-presentan densidades más elevadas y puntuaciones más altas en la escala
-de autoevaluación, especialmente en ansiedad y depresión, mientras que
-los grupos de mayor edad muestran distribuciones desplazadas hacia
-valores considerablemente más bajos. No obstante, estas diferencias
-deben tomarse con cautela debido a la escasa representación de
-encuestados en los tramos superiores de edad.
+En la segunda tabla resumen se encuentran las medias por edad en las
+diferentes enfermedades mentales. En primer lugar, en la ansiedad se
+observa una semejanza en las medias encontrándose entre (5,95-6,10)
+hasta los cuarenta conde existe una reducción significativa de este
+valor a 4,33. Análogamente, se encuentra la depresión, en la que hasta
+los 40 se mantiene una media estable entre 4,51 y 5,40, disminuyendo en
+la edad adulta a 3,33. Siguiendo este patrón es encuentra el OCD con una
+disminución significativa de la media a 1,83 a partir de los cuarenta,
+mientras que en edades anteriores se había mantenido entre 2,74 y 2,94.
+Por último, el insomnio en el que se observa que edades más temparanas
+entre los 10 y 30 años se mantiene estable, y a partir de los 30 aparece
+un aumento significativo de las medias llegando hasta 4,15.
+
+Además, podemos visualizar mediante los boxplot
+
+```{=html}
+<!-- A partir del análisis de las distribuciones por edad, se concluye
+que sí existe una relación entre los grupos de edad y la autoevaluación
+de los problemas de salud mental. Los participantes más jóvenes, que
+concentran la gran mayoría de la muestra (principalmente entre los 10 y
+30 años), presentan densidades más elevadas y puntuaciones más altas en
+la escala de autoevaluación, especialmente en ansiedad y depresión,
+mientras que los grupos de mayor edad muestran distribuciones
+desplazadas hacia valores considerablemente más bajos. No obstante,
+estas diferencias deben tomarse con cautela debido a la escasa
+representación de encuestados en los tramos superiores de edad. -->
+```
 
 ## - ¿Predomina alguna edad con algún tipo de enfermedad mental?
 
@@ -819,8 +855,18 @@ más claros, lo que indica que sus puntuaciones medias de autoevaluación
 son considerablemente más bajas en la mayoría de los grupos.
 
 ```{r}
-modelo_aov <- aov(ansiedad ~ GrupoEdad, data = datosAgrupEdad)
-summary(modelo_aov)
+modelo_aov1 <- aov(ansiedad ~ GrupoEdad, data = datosAgrupEdad)
+summary(modelo_aov1)
+TukeyHSD(modelo_aov1)
+
+modelo_aov2 <- aov(depresion ~ GrupoEdad, data = datosAgrupEdad)
+summary(modelo_aov2)
+
+modelo_aov3 <- aov(ocd ~ GrupoEdad, data = datosAgrupEdad)
+summary(modelo_aov3)
+
+modelo_aov4 <- aov(insomnio ~ GrupoEdad, data = datosAgrupEdad)
+summary(modelo_aov4)
 ```
 
 A partir de los resultados del análisis de la varianza (ANOVA), se
@@ -1186,7 +1232,9 @@ relación con los objetivos planteados:
 
     Los resultados del análisis de la varianza (ANOVA) confirmaron la
     existencia de diferencias estadísticamente significativas en los
-    niveles de ansiedad según los grupos de edad. Los participantes más
+    niveles de ansiedad según los grupos de edad, puesto que el p-valor
+    es igual a 0.00184\<0.05 por lo que se rechaza la hipótesis nula (no
+    existe diferencia entre los grupos de edades). Los participantes más
     jóvenes presentan las puntuaciones medias más elevadas,
     especialmente en ansiedad y depresión, mientras que los tramos de
     edad avanzada muestran distribuciones notablemente más bajas.
