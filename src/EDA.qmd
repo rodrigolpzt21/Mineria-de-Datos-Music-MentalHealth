@@ -682,7 +682,7 @@ algo menos de música, aunque habría que profundizar, antes de sacar
 conclusiones.
 
 Por otro lado podremos comenzar a estudiar algunas de las preguntas
-hechas al comienzo del trabajo:
+hechas al comienzo del trabajo.
 
 ## - ¿Qué género de música es el más habitual? ¿Y el que menos?
 
@@ -700,13 +700,12 @@ cat("El género menos habitual es:", genero_menos_habitual$genero_fav, "con", ge
 ```
 Podemos apreciar que el rock es el género que más se repite como el
 favorito de la gente y el menos habitual sin embargo son géneros
-minoritarios representados por la categoría otros géneros.
+minoritarios representados por la categoría otros géneros y el folk.
 
 Para visualizar mejor los datos de género favorito vamos a realizar un gráfico
 de barras horizontal.
 
 ```{r}
-#Generar un gráfico de barras horizontal ordenado
 ggplot(datos_train_imp %>% filter(!is.na(genero_fav)), aes(x = reorder(genero_fav, genero_fav, function(x) length(x)), fill = genero_fav)) +
   geom_bar(show.legend = FALSE) +
   coord_flip() + # Pone las barras en horizontal para leer mejor los nombres
@@ -718,7 +717,6 @@ ggplot(datos_train_imp %>% filter(!is.na(genero_fav)), aes(x = reorder(genero_fa
   ) +
   theme_minimal()
 ```
-
 A partir del análisis de los datos de la encuesta, al observar la
 variable de género musical favorito, se aprecia claramente que el género
 preferido entre los participantes es el Rock, seguido por el Pop y que
@@ -940,28 +938,11 @@ más claros, lo que indica que sus puntuaciones medias de autoevaluación
 son considerablemente más bajas en la mayoría de los grupos.
 
 ## - ¿Existe algún género musical que tenga efecto positivo en alguna de las enfermedades mentales?
-
-```{r}
-# Calcular los niveles medios de ansiedad y depresión según el género musical favorito
-efecto_genero <- datos_train_imp %>%
-  group_by(genero_fav) %>%
-  summarise(
-    Media_Ansiedad = round(mean(ansiedad, na.rm = TRUE), 2),
-    Media_Depresion = round(mean(depresion, na.rm = TRUE), 2),
-    Total_Personas = n()
-  ) %>%
-  arrange(desc(Media_Ansiedad))
-
-efecto_genero
-```
-
-## - ¿Existe algún género musical que tenga efecto positivo en alguna de las enfermedades mentales?
-
 Para responder a esta pregunta vamos a tomar a las personas que
 indicaron en la encuesta que la música tiene efecto positivo.
 
 ```{r}
-# 1. Filtrar a las personas que indican que la música tiene un efecto positivo ("Improve")
+#Filtramos a las personas que indican que la música tiene un efecto positivo ("Improve")
 # y calcular la media de escucha de cada género en ese grupo
 efecto_positivo_generos <- datos_train_imp %>%
   filter(efectos == "Improve") %>%
@@ -978,7 +959,6 @@ efecto_positivo_generos <- datos_train_imp %>%
   pivot_longer(everything(), names_to = "genero", values_to = "media_escucha") %>%
   arrange(desc(media_escucha))
 
-# Mostrar la tabla resultante
 efecto_positivo_generos
 
 ggplot(efecto_positivo_generos, aes(x = reorder(genero, media_escucha), y = media_escucha, fill = genero)) +
@@ -996,7 +976,7 @@ Al analizar si existe un género musical asociado a un efecto positivo en
 la salud mental, se observa de forma global que la gran mayoría de los
 encuestados que experimentan una mejoría (*Improve*) consumen
 habitualmente géneros como el Rock y el Pop. No obstante, esto guarda
-una estrecha relación con que son también los géneros más populares de
+una estrecha relación con que son también los géneros más habituales de
 la muestra.
 
 Al filtrar por patologías específicas como la ansiedad o la depresión,
@@ -1005,7 +985,7 @@ habituales, destacando el Rock, el Pop y el Metal en los niveles más
 altos de escucha.
 
 ```{r}
-ansiedad_baja_generos <- datos %>%
+ansiedad_baja_generos <- datos_train_imp %>%
   filter(ansiedad <= 1) %>%
   select(starts_with("f_")) %>%
   mutate(across(everything(), ~ case_when(
@@ -1250,6 +1230,21 @@ escucha.
 
 ##¿Es relevante saber la plataforma con la que escuchan música de cara a nuestra variable respuesta?
 
+
+##¿Es relevante el género favorito por si solo?
+```{r}
+# Calcular los niveles medios de ansiedad y depresión según el género musical favorito
+efecto_genero <- datos_train_imp %>%
+  group_by(genero_fav) %>%
+  summarise(
+    Media_Ansiedad = round(mean(ansiedad, na.rm = TRUE), 2),
+    Media_Depresion = round(mean(depresion, na.rm = TRUE), 2),
+    Total_Personas = n()
+  ) %>%
+  arrange(desc(Media_Ansiedad))
+
+efecto_genero
+```
 ## Principales hallazgos y conclusiones
 
 A partir del análisis exploratorio del conjunto de datos sobre música y
