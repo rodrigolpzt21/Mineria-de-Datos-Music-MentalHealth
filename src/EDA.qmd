@@ -955,99 +955,6 @@ efecto_genero <- datos_train_imp %>%
 efecto_genero
 ```
 
-## - ¿Cuáles son los géneros más/menos escuchados entre la gente con depresión/ansiedad/ocd/insomnia?
-
-Veamos ahora diagramas de cajas para comparar datos de generos favoritos
-con la autopercepción de los problemas mentales.
-
-```{r}
-#Diagrama de cajas 
-ggplot(datos_train_imp, aes(x = genero_fav, y = depresion, fill = genero_fav)) +
-  geom_boxplot() +
-  labs(title = "Diagrama de Cajas de depresion según genero_fav",
-       x = "Genero_fav",
-       y = "depresion") +
-  theme_minimal() +
-  theme(legend.position = "none")
-
-#Diagrama de cajas 
-ggplot(datos_train_imp, aes(x = genero_fav, y = ansiedad, fill = genero_fav)) +
-  geom_boxplot() +
-  labs(title = "Diagrama de Cajas de ansiedad según genero_fav",
-       x = "Genero_fav",
-       y = "ansiedad") +
-  theme_minimal() +
-  theme(legend.position = "none")
-#Diagrama de cajas 
-ggplot(datos_train_imp, aes(x = genero_fav, y = ocd, fill = genero_fav)) +
-  geom_boxplot() +
-  labs(title = "Diagrama de Cajas de ocd según genero_fav",
-       x = "Genero_fav",
-       y = "ocd") +
-  theme_minimal() +
-  theme(legend.position = "none")
-#Diagrama de cajas 
-ggplot(datos_train_imp, aes(x = genero_fav, y = insomnio, fill = genero_fav)) +
-  geom_boxplot() +
-  labs(title = "Diagrama de Cajas de insomnio según genero_fav",
-       x = "Genero_fav",
-       y = "insomnio") +
-  theme_minimal() +
-  theme(legend.position = "none")
-
-```
-
-```{r}
-#Porcentaje de efecto positivo por genero_fav
-efecto_por_genero <- datos_train_imp %>%
-  group_by(genero_fav) %>%
-  summarise(
-    total = n(),
-    mejora = sum(efectos == "Improve", na.rm = TRUE),
-    pct_mejora = round((mejora / total) * 100, 2)
-  ) %>%
-  arrange(desc(pct_mejora))
-
-print(efecto_por_genero)
-
-#Prueba estadística de Chi-cuadrado para ver si la relación es significativa
-tabla_contingencia <- table(datos_train_imp$genero_fav, datos_train_imp$efectos)
-chisq.test(tabla_contingencia)
-```
-
-(Preguntar a carmen po el p-valor que es cerca de 0,05 pero no menor)
-
-```{r}
-#Función para obtener género más y menos escuchado según trastorno
-generos_por_enfermedad <- function(df, variable_trastorno, umbral = 5) {
-  df %>%
-  mutate(genero_fav = as.character(genero_fav)) %>%
-    filter(.data[[variable_trastorno]] >= umbral) %>%
-    count(genero_fav, name = "cantidad") %>%
-    arrange(desc(cantidad))
-}
-
-# Géneros para personas con Depresión
-depresion_gen <- generos_por_enfermedad(datos_train_imp, "depresion")
-cat("--- DEPRESIÓN ---\nMás escuchado:", head(depresion_gen$genero_fav, 1), 
-    "\nMenos escuchado:", tail(depresion_gen$genero_fav, 1), "\n\n")
-
-# Géneros para personas con Ansiedad
-ansiedad_gen <- generos_por_enfermedad(datos_train_imp, "ansiedad")
-cat("--- ANSIEDAD ---\nMás escuchado:", head(ansiedad_gen$genero_fav, 1), 
-    "\nMenos escuchado:", tail(ansiedad_gen$genero_fav, 1), "\n\n")
-
-# Géneros para personas con TOC (OCD)
-ocd_gen <- generos_por_enfermedad(datos_train_imp, "ocd")
-cat("--- OCD ---\nMás escuchado:", head(ocd_gen$genero_fav, 1), 
-    "\nMenos escuchado:", tail(ocd_gen$genero_fav, 1), "\n\n")
-
-# Géneros para personas con Insomnio
-insomnio_gen <- generos_por_enfermedad(datos_train_imp, "insomnio")
-cat("--- INSOMNIO ---\nMás escuchado:", head(insomnio_gen$genero_fav, 1), 
-    "\nMenos escuchado:", tail(insomnio_gen$genero_fav, 1), "\n\n")
-```
-
 ## - ¿Existe algún género musical que tenga efecto positivo en alguna de las enfermedades mentales?
 
 Para responder a esta pregunta vamos a tomar a las personas que
@@ -1169,6 +1076,99 @@ insomnio_bajo_generos
 
 ## - ¿Cuáles son los géneros más/menos escuchados entre la gente con depresión/ansiedad/ocd/insomnia?
 
+Veamos ahora diagramas de cajas para comparar datos de generos favoritos
+con la autopercepción de los problemas mentales.
+
+```{r}
+#Diagrama de cajas 
+ggplot(datos_train_imp, aes(x = genero_fav, y = depresion, fill = genero_fav)) +
+  geom_boxplot() +
+  labs(title = "Diagrama de Cajas de depresion según genero_fav",
+       x = "Genero_fav",
+       y = "depresion") +
+  theme_minimal() +
+  theme(legend.position = "none")
+
+#Diagrama de cajas 
+ggplot(datos_train_imp, aes(x = genero_fav, y = ansiedad, fill = genero_fav)) +
+  geom_boxplot() +
+  labs(title = "Diagrama de Cajas de ansiedad según genero_fav",
+       x = "Genero_fav",
+       y = "ansiedad") +
+  theme_minimal() +
+  theme(legend.position = "none")
+#Diagrama de cajas 
+ggplot(datos_train_imp, aes(x = genero_fav, y = ocd, fill = genero_fav)) +
+  geom_boxplot() +
+  labs(title = "Diagrama de Cajas de ocd según genero_fav",
+       x = "Genero_fav",
+       y = "ocd") +
+  theme_minimal() +
+  theme(legend.position = "none")
+#Diagrama de cajas 
+ggplot(datos_train_imp, aes(x = genero_fav, y = insomnio, fill = genero_fav)) +
+  geom_boxplot() +
+  labs(title = "Diagrama de Cajas de insomnio según genero_fav",
+       x = "Genero_fav",
+       y = "insomnio") +
+  theme_minimal() +
+  theme(legend.position = "none")
+
+```
+
+```{r}
+#Porcentaje de efecto positivo por genero_fav
+efecto_por_genero <- datos_train_imp %>%
+  group_by(genero_fav) %>%
+  summarise(
+    total = n(),
+    mejora = sum(efectos == "Improve", na.rm = TRUE),
+    pct_mejora = round((mejora / total) * 100, 2)
+  ) %>%
+  arrange(desc(pct_mejora))
+
+print(efecto_por_genero)
+
+#Prueba estadística de Chi-cuadrado para ver si la relación es significativa
+tabla_contingencia <- table(datos_train_imp$genero_fav, datos_train_imp$efectos)
+chisq.test(tabla_contingencia)
+```
+
+(Preguntar a carmen po el p-valor que es cerca de 0,05 pero no menor)
+
+```{r}
+#Función para obtener género más y menos escuchado según trastorno
+generos_por_enfermedad <- function(df, variable_trastorno, umbral = 5) {
+  df %>%
+  mutate(genero_fav = as.character(genero_fav)) %>%
+    filter(.data[[variable_trastorno]] >= umbral) %>%
+    count(genero_fav, name = "cantidad") %>%
+    arrange(desc(cantidad))
+}
+
+# Géneros para personas con Depresión
+depresion_gen <- generos_por_enfermedad(datos_train_imp, "depresion")
+cat("--- DEPRESIÓN ---\nMás escuchado:", head(depresion_gen$genero_fav, 1), 
+    "\nMenos escuchado:", tail(depresion_gen$genero_fav, 1), "\n\n")
+
+# Géneros para personas con Ansiedad
+ansiedad_gen <- generos_por_enfermedad(datos_train_imp, "ansiedad")
+cat("--- ANSIEDAD ---\nMás escuchado:", head(ansiedad_gen$genero_fav, 1), 
+    "\nMenos escuchado:", tail(ansiedad_gen$genero_fav, 1), "\n\n")
+
+# Géneros para personas con TOC (OCD)
+ocd_gen <- generos_por_enfermedad(datos_train_imp, "ocd")
+cat("--- OCD ---\nMás escuchado:", head(ocd_gen$genero_fav, 1), 
+    "\nMenos escuchado:", tail(ocd_gen$genero_fav, 1), "\n\n")
+
+# Géneros para personas con Insomnio
+insomnio_gen <- generos_por_enfermedad(datos_train_imp, "insomnio")
+cat("--- INSOMNIO ---\nMás escuchado:", head(insomnio_gen$genero_fav, 1), 
+    "\nMenos escuchado:", tail(insomnio_gen$genero_fav, 1), "\n\n")
+```
+
+## - ¿Cuáles son los géneros más/menos escuchados entre la gente con depresión/ansiedad/ocd/insomnia?
+
 ```{r}
 # Función auxiliar para traducir las frecuencias de texto a valores numéricos (0 a 4)
 convertir_freq <- function(x) {
@@ -1247,6 +1247,8 @@ nuestro estudio en la predicción que buscamos analizar. Observamos que
 pueden existir variables que no nos proporcionen información al *target*
 como sería la plataforma e incluso el género favorito u horas de
 escucha.
+
+##¿Es relevante saber la plataforma con la que escuchan música de cara a nuestra variable respuesta?
 
 ## Principales hallazgos y conclusiones
 
