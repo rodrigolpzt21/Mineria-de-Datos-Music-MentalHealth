@@ -1163,7 +1163,7 @@ convertir_freq <- function(x) {
 }
 
 # --- 1. PERSONAS CON ANSIEDAD ALTA---
-ranking_ansiedad <- datos %>%
+ranking_ansiedad <- datos_train_imp %>%
   filter(ansiedad >= 3) %>%
   select(starts_with("f_")) %>%
   mutate(across(everything(), convertir_freq)) %>%
@@ -1176,7 +1176,7 @@ print(ranking_ansiedad)
 
 
 # --- 2. PERSONAS CON DEPRESIÓN ALTA (ej. puntuación > 5) ---
-ranking_depresion <- datos %>%
+ranking_depresion <- datos_train_imp %>%
   filter(depresion >= 3) %>%
   select(starts_with("f_")) %>%
   mutate(across(everything(), convertir_freq)) %>%
@@ -1189,7 +1189,7 @@ print(ranking_depresion)
 
 
 # --- 3. PERSONAS CON INSOMNIO ALTO (ej. puntuación > 4) ---
-ranking_insomnio <- datos %>%
+ranking_insomnio <- datos_train_imp %>%
   filter(insomnio >=3) %>%
   select(starts_with("f_")) %>%
   mutate(across(everything(), convertir_freq)) %>%
@@ -1202,7 +1202,7 @@ print(ranking_insomnio)
 
 
 # --- 4. PERSONAS CON OCD ALTO (ej. puntuación > 3) ---
-ranking_ocd <- datos %>%
+ranking_ocd <- datos_train_imp %>%
   filter(ocd >= 3) %>%
   select(starts_with("f_")) %>%
   mutate(across(everything(), convertir_freq)) %>%
@@ -1229,8 +1229,82 @@ como sería la plataforma e incluso el género favorito u horas de
 escucha.
 
 ##¿Es relevante saber la plataforma con la que escuchan música de cara a nuestra variable respuesta?
+```{r}
+ggplot(datos_train_imp, aes(x = plataforma, fill = efectos)) +
+  geom_bar(position = "fill") +
+  scale_y_continuous(labels = scales::percent) +
+  labs(
+    title = "Distribución de Efectos por Plataforma",
+    x = "Plataforma",
+    y = "Proporción (100%)",
+    fill = "Efectos"
+  ) +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1)
+  )
+```
+Por lo que podemos apreciar en el gráfico, todas las plataformas tienen proporciones similares.
+Pandora resalta por solo tener improve. Veamos cuantas muestras tenemos con pandora para verificar que no se deba una cantidad reducida de muestras. Y de paso comprobemos el resto de categorias. 
+```{r}
+table(datos_train_imp$plataforma)
+```
+Vemos que efectivamente pandora tiene solo 5 instancias, por lo que seguramente se deba a ello. 
+Además, se aprecia que Spotify es mucho más usada que las otras platadormas, hasta el punto que es superior a todas las demás juntas.
+
+Juntemoslas para comparar Spotify a las demás, para ver si el gráfico de barras entre Spotify y las demás se parecen más entre si. 
+
+```{r}
+datos_train_agrupplat <- datos_train_imp
+
+datos_train_agrupplat$plataforma <- ifelse(
+  datos_train_agrupplat$plataforma == "Spotify", 
+  "Spotify", 
+  "Otros"
+)
+ggplot(datos_train_agrupplat, aes(x = plataforma, fill = efectos)) +
+  geom_bar(position = "fill") +
+  scale_y_continuous(labels = scales::percent) +
+  labs(
+    title = "Distribución de Efectos por Plataforma",
+    x = "Plataforma",
+    y = "Proporción (100%)",
+    fill = "Efectos"
+  ) +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1)
+  )
+```
+Como podemos apreciar al agruparlo, las distribuciones son identicas prácticamente. 
 
 
+También vamos a usar el test chi cuadrado con todas las categorias y luego probaremos con la versión de dos categorias solo.
+
+La prueba de chi-cuadrado es una prueba estadística que sirve para determinar si existe una asociación significativa entre variables cualitativas o categóricas comparando lo que se ha observado en la realidad con lo que se esperaría obtener por azar. En este test la hipótesis nula es que las variables son independientes o no tienen relación. 
+
+```{r}
+chisq.test(table(datos_train_imp$plataforma, datos_train_imp$efectos))
+```
+El p-valor es de 0,9, por lo que no podemos rechazar la hipótesis nula de que sean independientes,
+por lo que parece la variable plataforma no influye en nuestra variable efecto.
+
+Aun así como nos sale en el test chi cuadrado un warning en el que puede ser incorrecto, debido a que algunas muestras en algunas categorías no son suficientes, probaremos con el test de fisher que funciona similar. 
+
+```{r}
+
+fisher.test(table(datos_train_imp$plataforma, datos_train_imp$efectos), simulate.p.value = TRUE)
+```
+El resultado de este test, reafirma lo visto con el test chi-cuadrado. 
+
+Probemos ahora con solo dos categorias.
+```{r}
+chisq.test(table(datos_train_agrupplat$plataforma, datos_train_agrupplat$efectos))
+fisher.test(table(datos_train_agrupplat$plataforma, datos_train_agrupplat$efectos), simulate.p.value = TRUE)
+```
+Aunque el p-valor de los test, es menor en este caso para ambos test, sigue siendo suficiente alto como para no poder rechazar la hipótesis nula.
+
+Habiendo visto estas pruebas, parece ser que la variable plataforma no aporta a la hora de ver si un paciente mejora o no en nuestro estudio. Por lo que quizá sea de nuestro interes eliminarla en la próxima etapa del proyecto.
 ##¿Es relevante el género favorito por si solo?
 ```{r}
 # Calcular los niveles medios de ansiedad y depresión según el género musical favorito
