@@ -692,10 +692,13 @@ genero_menos_habitual <- conteo_generos %>% slice(n())
 cat("El género más habitual es:", genero_mas_habitual$genero_fav, "con", genero_mas_habitual$n, "personas.\n")
 cat("El género menos habitual es:", genero_menos_habitual$genero_fav, "con", genero_menos_habitual$n, "personas.\n")
 ```
-Podemos apreciar que el rock es el género que más se repite como el favorito de la gente y el menos habitual sin embargo son géneros minoritarios representados por la categoría otros géneros.
 
-Para visualizar mejor los datos de género favorito vamos a realizar una tabla resumen y un
-gráfico de barras horizontal.
+Podemos apreciar que el rock es el género que más se repite como el
+favorito de la gente y el menos habitual sin embargo son géneros
+minoritarios representados por la categoría otros géneros.
+
+Para visualizar mejor los datos de género favorito vamos a realizar una
+tabla resumen y un gráfico de barras horizontal.
 
 ```{r}
 #Crear una tabla resumen con las frecuencias ordenadas
@@ -719,7 +722,8 @@ ggplot(datos_train_imp %>% filter(!is.na(genero_fav)), aes(x = reorder(genero_fa
 A partir del análisis de los datos de la encuesta, al observar la
 variable de género musical favorito, se aprecia claramente que el género
 preferido entre los participantes es el Rock, seguido por el Pop y que
-los géneros con menor representación como favoritos son el folk y el conjunto de otros géneros.
+los géneros con menor representación como favoritos son el folk y el
+conjunto de otros géneros.
 
 ## - ¿Existe alguna relación entre grupos de edades y el padecimiento de alguna enfermedad mental?
 
@@ -734,11 +738,12 @@ table(datosAgrupEdad$GrupoEdad)
 prop.table(table(datosAgrupEdad$GrupoEdad))
 
 ```
-Como vemos la mayoría de las personas están en los primeros tres bloques de 10 años,
-mientras que a partir de 40 años no tenemos apenas personas en nuestra muestra.
-Por lo que decidiremos agrupar los bloques de las personas con edad de
-cuarenta en adelante para que así sea más significativo en nuestro
-estudio.
+
+Como vemos la mayoría de las personas están en los primeros tres bloques
+de 10 años, mientras que a partir de 40 años no tenemos apenas personas
+en nuestra muestra. Por lo que decidiremos agrupar los bloques de las
+personas con edad de cuarenta en adelante para que así sea más
+significativo en nuestro estudio.
 
 ```{r}
 datosEdad<-datos_train_imp %>% mutate(GrupoEdad=case_when(
@@ -752,18 +757,33 @@ datosEdad<-datos_train_imp %>% mutate(GrupoEdad=case_when(
 
 table(datosEdad$GrupoEdad)
 prop.table(table(datosEdad$GrupoEdad))
-
-print("Ansiedad")
+cat("\n")
+cat("---Ansiedad---\n")
+modelo_aov1 <- aov(ansiedad ~ GrupoEdad, data = datosEdad)
+summary(modelo_aov1)
+TukeyHSD(modelo_aov1)
 table(datosEdad$GrupoEdad,datosEdad$ansiedad)
 prop.table(table(datosEdad$GrupoEdad,datosEdad$ansiedad),margin=1)*100
-print("Depresion")
+
+cat("\n")
+cat("---Depresión---\n")
+modelo_aov2 <- aov(depresion ~ GrupoEdad, data = datosEdad)
+summary(modelo_aov2)
+TukeyHSD(modelo_aov2)
+
 table(datosEdad$GrupoEdad,datosEdad$depresion)
-print("OCD")
+
+cat("\n")
+cat("---OCD---\n")
+modelo_aov3 <- aov(ocd ~ GrupoEdad, data = datosEdad)
+summary(modelo_aov3)
 table(datosEdad$GrupoEdad,datosEdad$ocd)
-print("Insomnio")
+
+cat("\n")
+cat("---Insomnio---\n")
+modelo_aov4 <- aov(insomnio ~ GrupoEdad, data = datosEdad)
+summary(modelo_aov4)
 table(datosEdad$GrupoEdad,datosEdad$insomnio)
-
-
 datosEdad %>% group_by(GrupoEdad)%>% summarise(
   n=n(),
   Ansiedad=mean(ansiedad,na.rm=TRUE),
@@ -771,25 +791,25 @@ datosEdad %>% group_by(GrupoEdad)%>% summarise(
   OCD=mean(ocd,na.rm=TRUE),
   Insomnio=mean(insomnio,na.rm=TRUE)
 )
-ggplot(datosEdad,aes(x=GrupoEdad,y=ansiedad))+geom_boxplot()+labs(
+ggplot(datosEdad,aes(x=GrupoEdad,y=ansiedad))+geom_boxplot(fill = "#FFDADA", color = "#D98888", linewidth = 0.8)+labs(
   title="Ansiedad por grupos de edad",
   x="Grupos de edad",
   y="Escala de autoevaluacion de ansiedad"
 )
-ggplot(datosEdad,aes(x=GrupoEdad,y=depresion))+geom_boxplot()+labs(
-  title="Depresion por grupos de edad",
+ggplot(datosEdad,aes(x=GrupoEdad,y=depresion))+geom_boxplot(fill = "#D9EAC6", color = "#8CA675", linewidth = 0.8)+labs(
+  title="Depresión por grupos de edad",
   x="Grupos de edad",
-  y="Escala de autoevaluacion de depresion"
+  y="Escala de autoevaluacion de depresión"
 )
-ggplot(datosEdad,aes(x=GrupoEdad,y=ocd))+geom_boxplot()+labs(
-  title="OCD por grupos de edad",
-  x="Grupos de edad",
-  y="Escala de autoevaluacion de ocd"
-)
-ggplot(datosEdad,aes(x=GrupoEdad,y=insomnio))+geom_boxplot()+labs(
+ggplot(datosEdad,aes(x=GrupoEdad,y=insomnio))+geom_boxplot(fill = "#CAEEF1", color = "#6FA8AD", linewidth = 0.8)+labs(
   title="Insomnio por grupos de edad",
   x="Grupos de edad",
   y="Escala de autoevaluacion de insomnio"
+)
+ggplot(datosEdad,aes(x=GrupoEdad,y=ocd))+geom_boxplot(fill = "#E7DAF6", color = "#A68CC2", linewidth = 0.8)+labs(
+  title="OCD por grupos de edad",
+  x="Grupos de edad",
+  y="Escala de autoevaluacion de OCD"
 )
 
 datosdensidad <- datosEdad %>%
@@ -811,22 +831,69 @@ ggplot(datosdensidad, aes(x = `Escala de autoevaluacion`, colour = Trastorno, fi
   ) +
   theme_minimal()
 
+
 ```
 
-En la segunda tabla resumen se encuentran las medias por edad en las
-diferentes enfermedades mentales. En primer lugar, en la ansiedad se
-observa una semejanza en las medias encontrándose entre (5,95-6,10)
-hasta los cuarenta conde existe una reducción significativa de este
-valor a 4,33. Análogamente, se encuentra la depresión, en la que hasta
-los 40 se mantiene una media estable entre 4,51 y 5,40, disminuyendo en
-la edad adulta a 3,33. Siguiendo este patrón es encuentra el OCD con una
-disminución significativa de la media a 1,83 a partir de los cuarenta,
-mientras que en edades anteriores se había mantenido entre 2,74 y 2,94.
-Por último, el insomnio en el que se observa que edades más temparanas
-entre los 10 y 30 años se mantiene estable, y a partir de los 30 aparece
-un aumento significativo de las medias llegando hasta 4,15.
+A partir de los resultados del análisis de la varianza (ANOVA), se
+concluye que sí existen diferencias estadísticamente significativas en
+los niveles de algunas de las enfermedades mentales entre los diferentes
+grupos de edad.
 
-Además, podemos visualizar mediante los boxplot
+En primer lugar, encontramos la ansiedad y la depresión con un p-valor
+significativamente inferior al 0.05 incluso a 0.01 en alguno de los
+casos, con 0.0212 y 0.00646 respectivamente, confirmando que la edad es
+un factor que influye de manera relevante en la autoevaluación de estos
+trastornos. Por otro lado, se tiene el OCD y el insomnio con un p-valor
+por encima de 0.05 con 0.3010 y 0.3640 respectivamente por lo que estos
+no muestran evidencia estadística suficiente para confirmar que sus
+niveles afecten en la muestra.
+
+Relacionando estos análisis con los boxplot adjuntos y con las tablas
+hechas con la función Tukey observamos que las diferencias
+estadísticamente significativas son entre los grupos más jóvenes y los
+mayores de 40 ya que como observamos en el caso de la ansiedad el
+p-valor comparando los grupos inferiores a 40 y los superiores el
+p-valor es inferior a 0.05 en todos los casos:
+
+- \[10,20) frente a 40 o más: 0.0161077
+
+- \[20,30) frente a 40 o más: 0.0201644
+
+- \[30,40) frente a 40 o más: 0.0430582
+
+Esto mismo podemos relacionarlo con el boxplot de la ansiedad puesto que
+como vemos las medianas hasta los 40 años se mantienen estables
+mostrando un drástico descenso a partir de estos. Continuando con el
+estudio Tukey, en la depresión vemos que ocurre algo diferente, entre
+las edades más tempranas existe un p-valor que indica la significancia
+estadística, al igual que la comparación entre los grupos de 20 y 30 con
+los mayores a 40
+
+- \[20,30) frente a \[10,20): 0.0408
+
+- \[20,30) frente a 40 o más: 0.0191
+
+De nuevo en el boxplot observamos que las edades donde menor mediana
+existe y mayor diferencia hay entre el resto de edades son los que se
+encuentran entre 10 y 20 y los mayores de 40. Para terminar, las últimas
+dos enfermedades dan como resultado boxplot donde la mediana entre las
+edades es bastante similar, sobre todo en el caso del insomnio, y donde
+se podría encontrar una reducción de mediana más significante sería en
+el OCD a partir de los treinta.
+
+Siguiendo con el análisis, en la segunda tabla resumen se encuentran las
+medias por edad en las diferentes enfermedades mentales. En primer
+lugar, en la ansiedad se observa una semejanza en las medias
+encontrándose entre (5,95-6,10) hasta los cuarenta conde existe una
+reducción significativa de este valor a 4,33. Análogamente, se encuentra
+la depresión, en la que hasta los 40 se mantiene una media estable entre
+4,51 y 5,40, disminuyendo en la edad adulta a 3,33. Siguiendo este
+patrón es encuentra el OCD con una disminución significativa de la media
+a 1,83 a partir de los cuarenta, mientras que en edades anteriores se
+había mantenido entre 2,74 y 2,94. Por último, el insomnio en el que se
+observa que edades más temparanas entre los 10 y 30 años se mantiene
+estable, y a partir de los 30 aparece un aumento significativo de las
+medias llegando hasta 4,15.
 
 ```{=html}
 <!-- A partir del análisis de las distribuciones por edad, se concluye
@@ -848,17 +915,6 @@ representación de encuestados en los tramos superiores de edad. -->
 datos_largo <- datosEdad %>%
   pivot_longer(cols = c(ansiedad, depresion, insomnio, ocd),
                names_to = "Enfermedad", values_to = "Puntuacion")
-
-# Gráfico de caja (Boxplot) por grupo de edad para cada enfermedad
-ggplot(datos_largo, aes(x = GrupoEdad, y = Puntuacion, fill = GrupoEdad)) +
-  geom_boxplot(alpha = 0.7) +
-  facet_wrap(~ Enfermedad) +
-  theme_minimal() +
-  labs(title = "Nivel de problemas de salud mental por Grupo de Edad",
-       x = "Grupo de Edad", y = "Puntuación de autoevaluación") +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1), legend.position = "none")
-
-
 # Calculamos la puntuación media de cada enfermedad por cada grupo de edad
 datos_medias <- datos_largo %>%
   group_by(GrupoEdad, Enfermedad) %>%
@@ -883,34 +939,11 @@ tramos de edad. Por el contrario, el insomnio y el TOC muestran colores
 más claros, lo que indica que sus puntuaciones medias de autoevaluación
 son considerablemente más bajas en la mayoría de los grupos.
 
-```{r}
-modelo_aov1 <- aov(ansiedad ~ GrupoEdad, data = datosEdad)
-summary(modelo_aov1)
-TukeyHSD(modelo_aov1)
-
-modelo_aov2 <- aov(depresion ~ GrupoEdad, data = datosEdad)
-summary(modelo_aov2)
-
-modelo_aov3 <- aov(ocd ~ GrupoEdad, data = datosEdad)
-summary(modelo_aov3)
-
-modelo_aov4 <- aov(insomnio ~ GrupoEdad, data = datosEdad)
-summary(modelo_aov4)
-```
-
-A partir de los resultados del análisis de la varianza (ANOVA), se
-concluye que sí existen diferencias estadísticamente significativas en
-los niveles de ansiedad entre los diferentes grupos de edad.
-
-Dado que el p-valor es considerablemente inferior a 0.05, se rechaza la
-hipótesis nula, lo que confirma que la edad es un factor que influye de
-manera relevante en la autoevaluación de la ansiedad.
-
 ## - ¿Existe algún género musical que tenga efecto positivo en alguna de las enfermedades mentales?
 
 ```{r}
 # Calcular los niveles medios de ansiedad y depresión según el género musical favorito
-efecto_genero <- datos %>%
+efecto_genero <- datos_train_imp %>%
   group_by(genero_fav) %>%
   summarise(
     Media_Ansiedad = round(mean(ansiedad, na.rm = TRUE), 2),
