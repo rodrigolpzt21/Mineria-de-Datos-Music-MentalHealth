@@ -160,6 +160,9 @@ enfermedad mental?
 enfermedades mentales? ¿Cuáles son los géneros más/menos escuchados
 entre la gente con depresión/ansiedad/ocd/insomnia?
 
+¿Es relevante saber la plataforma con la que escuchan música de cara a nuestra
+variable respuesta?
+
 ## Proceso de exploración
 
 Tras haber renombrado las variables procedemos a realizar el proceso de
@@ -511,12 +514,11 @@ stripchart(datos_train$bpm,
            col = rgb(0, 0, 1, 0.3))
 ```
 
-####Información del "entendido/experto" Los valores típicos de bpm en la
-música oscilan habitualmente entre los 40 y los 220 bpm, pero podemos
-ver que tenemos 4 valores atípicos por debajo de 40 y 1 por encima de
-220, además de tener en la partición 50 NA. Claramente la media está
-siendo afectada por el valor atípico superior, pues es varias escalas
-por encima.
+####Información del "entendido/experto" 
+Los valores típicos de bpm en la música oscilan habitualmente entre los 40 y los
+220 bpm, pero podemos ver que tenemos 4 valores atípicos por debajo de 40 y 1 por
+encima de 220, además de tener en la partición 50 NA. Claramente la media está
+siendo afectada por el valor atípico superior, pues es varias escalas por encima.
 
 Vamos a transformar las entradas atípicas en NA por ahora, considerando
 que se han rellenado con desconocimiento, para poder analizar de forma
@@ -635,10 +637,14 @@ Ahora veamos un resumen global de los datos imputados.
 summary(datos_train_imp)
 print(dfSummary(datos_train_imp),method = "render")
 ```
+También nos falta eliminar los NA de la variable respuesta que no han sido imputados.
+```{r}
+datos_train_imp <- datos_train_imp[!is.na(datos_train_imp[[ncol(datos_train_imp)]]), ]
+```
 
 #### Ahora miremos algunos gráficos para seguir explorando los datos.
 
-Veamos la matriz de correlaciones de las variables numéticas
+Veamos la matriz de correlaciones de las variables numéricas
 
 ```{r}
 #Matriz de correlaciones
@@ -660,7 +666,7 @@ cantidad de horas de escucha de música.
 
 ```{r}
 #Diagrama de cajas 
-ggplot(datos_train_imp, aes(x = efectos, y = horas_pd, fill = efectos)) +
+ggplot(datos_train_imp, aes(x = efectos, y = horas_pd)) +
   geom_boxplot() +
   labs(title = "Diagrama de Cajas de horas según efecto",
        x = "efecto",
@@ -692,20 +698,14 @@ genero_menos_habitual <- conteo_generos %>% slice(n())
 cat("El género más habitual es:", genero_mas_habitual$genero_fav, "con", genero_mas_habitual$n, "personas.\n")
 cat("El género menos habitual es:", genero_menos_habitual$genero_fav, "con", genero_menos_habitual$n, "personas.\n")
 ```
-
 Podemos apreciar que el rock es el género que más se repite como el
 favorito de la gente y el menos habitual sin embargo son géneros
 minoritarios representados por la categoría otros géneros.
 
-Para visualizar mejor los datos de género favorito vamos a realizar una
-tabla resumen y un gráfico de barras horizontal.
+Para visualizar mejor los datos de género favorito vamos a realizar un gráfico
+de barras horizontal.
 
 ```{r}
-#Crear una tabla resumen con las frecuencias ordenadas
-tabla_generos <- datos_train_imp %>%
-  count(genero_fav, sort = TRUE)
-#Mostrar la tabla
-tabla_generos
 #Generar un gráfico de barras horizontal ordenado
 ggplot(datos_train_imp %>% filter(!is.na(genero_fav)), aes(x = reorder(genero_fav, genero_fav, function(x) length(x)), fill = genero_fav)) +
   geom_bar(show.legend = FALSE) +
@@ -1056,7 +1056,7 @@ indicaron en la encuesta que la música tiene efecto positivo.
 ```{r}
 # 1. Filtrar a las personas que indican que la música tiene un efecto positivo ("Improve")
 # y calcular la media de escucha de cada género en ese grupo
-efecto_positivo_generos <- datos %>%
+efecto_positivo_generos <- datos_train_imp %>%
   filter(efectos == "Improve") %>%
   select(starts_with("f_")) %>%
   mutate(across(everything(), ~ case_when(
