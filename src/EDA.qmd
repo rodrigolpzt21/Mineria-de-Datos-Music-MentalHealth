@@ -50,12 +50,13 @@ Variables de los datos en bruto antes de trabajar y depurar:
 
 - Fecha: variable de fecha en la que se entregó el formulario.
 
-- Edad: variable de la edad de la persona que responde el formulario.
+- Edad: variable numérica de la edad de la persona que responde el
+  formulario.
 
 - Plataforma: variable categórica del servicio utilizado para escuchar
   música.
 
-- Horas_pd: variable del número de horas que escuchan música
+- Horas_pd: variable numérica sobre las horas que escuchan música
   diariamente.
 
 - Trabajando: variable binaria de la escucha de música durante el
@@ -65,7 +66,7 @@ Variables de los datos en bruto antes de trabajar y depurar:
 
 - Músico: variable binaria de si la persona compone música.
 
-- Genero_fav: variable categórica nominal sobre el genero favorito de
+- Genero_fav: variable categórica nominal sobre el género favorito de
   música.
 
 - Explorador: variable binaria que describe si la persona suele probar
@@ -102,7 +103,7 @@ Variables de los datos en bruto antes de trabajar y depurar:
 
 ## Planteamiento inicial del EDA
 
-Empezamos leyendo los datos y cargando todas las librerias que vamos a
+Empezamos leyendo los datos y cargando todas las librerías que vamos a
 usar a lo largo del EDA.
 
 ```{r}
@@ -140,7 +141,7 @@ variable objetivo.
 
 Una vez resueltas las sospechas con las variables dudosas, procederemos
 a analizar los datos faltantes de las variables y realizaremos una
-imputación por arbol de regresión, para el que guardaremos la receta
+imputación por árbol de regresión, para el que guardaremos la receta
 para usar posteriormente en el validation.
 
 Realizaremos un análisis sobre nuestro conjunto train imputado en busca
@@ -184,7 +185,7 @@ datos.
 str(datos)
 ```
 
-Podemos observar que hay unos vacios en los datos, que debemos
+Podemos observar que hay unos vacíos en los datos, que debemos
 investigar. Ejemplo de ello en el str, es en efectos, que tenemos las
 dos primeras entradas vacias (NA).
 
@@ -477,7 +478,7 @@ En la primera parte del análisis, vimos que la variable bpm nos generaba
 dudas de su utilidad, por sus valores y por la gran cantidad de datos
 faltantes que tenía.
 
-Procedemos a analizar esta variable para determinar si va a sernos util
+Procedemos a analizar esta variable para determinar si va a sernos útil
 o debemos dejarla en cuarentena por ahora.
 
 ```{r}
@@ -577,7 +578,7 @@ mucho esta variable.
 **Anova y test de aporte:** al realizar un anova, nos da un p-valor muy
 alto de 0,87, por lo que no hay evidencia suficiente para rechazar la
 hipótesis nula y por tanto, no hay diferencias significativas entre las
-medias de los grupos. Y encima el test de importancia nos dice que a lo
+medias de los grupos. Además, el test de importancia nos dice que a lo
 sumo aporta un 0,56% de la información en la variable respuesta. Lo que
 es despreciable.
 
@@ -731,9 +732,7 @@ conjunto de otros géneros.
 
 ## - ¿Existe alguna relación entre grupos de edades y el padecimiento de alguna enfermedad mental?
 
-Para ello primero agruparemos por edad de 10 en diez a los participante,
-observamos que la gran mayoría se encuentra entre los 10 y 30 años
-mientras que a no hay apenas encuestados a partir de los 60 años.
+Para ello primero agruparemos por edad de 10 en diez a los participante
 
 ```{r}
 datosAgrupEdad<-datos_train_imp %>% mutate(GrupoEdad=
@@ -743,9 +742,9 @@ prop.table(table(datosAgrupEdad$GrupoEdad))
 
 ```
 
-Como vemos la mayoría de las personas están en los primeros tres bloques
-de 10 años, mientras que a partir de 40 años no tenemos apenas personas
-en nuestra muestra. Por lo que decidiremos agrupar los bloques de las
+Como vemos la mayoría están en los primeros tres bloques de 10 años,
+mientras que a partir de 40 años no tenemos apenas encuestados en
+nuestra muestra. Por lo que decidiremos agrupar los bloques de las
 personas con edad de cuarenta en adelante para que así sea más
 significativo en nuestro estudio.
 
@@ -788,13 +787,7 @@ cat("---Insomnio---\n")
 modelo_aov4 <- aov(insomnio ~ GrupoEdad, data = datosEdad)
 summary(modelo_aov4)
 table(datosEdad$GrupoEdad,datosEdad$insomnio)
-datosEdad %>% group_by(GrupoEdad)%>% summarise(
-  n=n(),
-  Ansiedad=mean(ansiedad,na.rm=TRUE),
-  Depresion=mean(depresion,na.rm=TRUE),
-  OCD=mean(ocd,na.rm=TRUE),
-  Insomnio=mean(insomnio,na.rm=TRUE)
-)
+
 ggplot(datosEdad,aes(x=GrupoEdad,y=ansiedad))+geom_boxplot(fill = "#FFDADA", color = "#D98888", linewidth = 0.8)+labs(
   title="Ansiedad por grupos de edad",
   x="Grupos de edad",
@@ -823,6 +816,94 @@ datosdensidad <- datosEdad %>%
     values_to = "Escala de autoevaluacion"
   )
 
+
+
+```
+
+**Resultado del ANOVA y boxplot:** A partir de los resultados del
+análisis de la varianza (ANOVA), se concluye que sí existen diferencias
+estadísticamente significativas en los niveles de algunas de las
+enfermedades mentales entre los diferentes grupos de edad.
+
+En primer lugar, encontramos la ansiedad y la depresión con un p-valor
+significativamente inferior al 0.05 incluso a 0.01 en alguno de los
+casos, con 0.0306 y 0.00961 respectivamente, confirmando que la edad es
+un factor que influye de manera relevante en la autoevaluación de estos
+trastornos. Por otro lado, se tiene el OCD y el insomnio con un p-valor
+por encima de 0.05 con 0.316 y 0.346 respectivamente por lo que estos no
+muestran evidencia estadística suficiente para confirmar que sus niveles
+afecten en la muestra.
+
+Relacionando estos análisis con los boxplot adjuntos y con las tablas
+hechas con la función Tukey, observamos que las diferencias
+estadísticamente significativas son entre los grupos más jóvenes y los
+mayores de 40 ya que como observamos en el caso de la ansiedad el
+p-valor comparando los grupos inferiores a 40 y los superiores es
+inferior a 0.05 en la mayoría de los casos:
+
+- \[10,20) frente a 40 o más: 0.0229138
+
+- \[20,30) frente a 40 o más: 0.0301199
+
+Esto mismo podemos relacionarlo con el boxplot de la ansiedad puesto que
+como vemos las medianas hasta los 40 años se mantienen estables
+mostrando un drástico descenso a partir de estos. Continuando con el
+estudio Tukey, en la depresión vemos que ocurre algo diferente, entre
+las edades más tempranas existe un p-valor que indica la significancia
+estadística, al igual que la comparación entre los grupos de 20 y 30 con
+los mayores a 40:
+
+- \[20,30) frente a \[10,20): 0.0472601
+
+- \[20,30) frente a 40 o más: 0.0299882
+
+De nuevo en el boxplot observamos que las edades donde menor mediana
+existe y mayor diferencia hay entre el resto de edades son los que se
+encuentran entre 10 y 20 y los mayores de 40. Para terminar, las últimas
+dos enfermedades dan como resultado boxplot donde la mediana entre las
+edades es bastante similar, sobre todo en el caso del insomnio, y donde
+se podría encontrar una reducción de mediana más significativa
+aparentemente sería en el OCD a partir de los treinta.
+
+```{r}
+datosEdad %>% group_by(GrupoEdad)%>% summarise(
+  n=n(),
+  Ansiedad=mean(ansiedad,na.rm=TRUE),
+  Depresion=mean(depresion,na.rm=TRUE),
+  OCD=mean(ocd,na.rm=TRUE),
+  Insomnio=mean(insomnio,na.rm=TRUE)
+)
+```
+
+**Resultado de la tabla de medias:** Siguiendo con el análisis, en esta
+tabla resumen se encuentran las medias por edad en las diferentes
+enfermedades mentales. En primer lugar, en la ansiedad se observa una
+semejanza en las medias encontrándose entre (5,94-6,10) hasta los
+cuarenta donde existe una reducción significativa de este valor a 4,38.
+Análogamente, se encuentra la depresión, en la que hasta los 40 se
+mantiene una media estable entre 4,51 y 5,38, disminuyendo en la edad
+adulta a 3,72. Siguiendo este patrón es encuentra el OCD con una
+disminución significativa de la media a 1,83 a partir de los cuarenta,
+mientras que en edades anteriores se había mantenido entre 2,76r y 2,94.
+Por último, el insomnio en el que se observa que edades más temparanas
+entre los 10 y 30 años se mantiene estable, y a partir de los 30 aparece
+un aumento significativo de las medias llegando hasta 4,15.
+
+**Resultado del gráfico de densidad:** A continuación, visualizaremos un
+gráfico de densidad que nos muestra la distribución de las enfermedades
+de salud mental por grupos de edad. Con estos resultados vemos como la
+ansiedad (anaranjado) muestra un pico alto en las edades hasta cuarenta
+años, sobre todo muestra un pico pronunciado en valores más elevados. La
+depresión (verdoso), al igual que la ansiedad muestra una mayor
+concentración entre los 10 y 30 años, mientras que a partir de los 40
+muestra un desplazamiento claro hacia valores más bajos. Por otro lado,
+el OCD (morado) señala en todas las edades una curva de densidad alta en
+valores más bajos, coincidiendo con el valor encontrado con el ANOVA
+puesto que no había diferencias significativas. Por último, se tiene el
+insomnio(azulado), que se mantiene estable aunque muestra una densidad
+mayor en valores más bajos sobre todo en edades tempranas
+
+```{r}
 ggplot(datosdensidad, aes(x = `Escala de autoevaluacion`, colour = Trastorno, fill = Trastorno)) +
   geom_density(alpha = 0.2, na.rm = TRUE) +
   facet_wrap(~ GrupoEdad) +
@@ -834,82 +915,6 @@ ggplot(datosdensidad, aes(x = `Escala de autoevaluacion`, colour = Trastorno, fi
     fill = "Variable"
   ) +
   theme_minimal()
-
-
-```
-
-A partir de los resultados del análisis de la varianza (ANOVA), se
-concluye que sí existen diferencias estadísticamente significativas en
-los niveles de algunas de las enfermedades mentales entre los diferentes
-grupos de edad.
-
-En primer lugar, encontramos la ansiedad y la depresión con un p-valor
-significativamente inferior al 0.05 incluso a 0.01 en alguno de los
-casos, con 0.0212 y 0.00646 respectivamente, confirmando que la edad es
-un factor que influye de manera relevante en la autoevaluación de estos
-trastornos. Por otro lado, se tiene el OCD y el insomnio con un p-valor
-por encima de 0.05 con 0.3010 y 0.3640 respectivamente por lo que estos
-no muestran evidencia estadística suficiente para confirmar que sus
-niveles afecten en la muestra.
-
-Relacionando estos análisis con los boxplot adjuntos y con las tablas
-hechas con la función Tukey observamos que las diferencias
-estadísticamente significativas son entre los grupos más jóvenes y los
-mayores de 40 ya que como observamos en el caso de la ansiedad el
-p-valor comparando los grupos inferiores a 40 y los superiores el
-p-valor es inferior a 0.05 en todos los casos:
-
-- \[10,20) frente a 40 o más: 0.0161077
-
-- \[20,30) frente a 40 o más: 0.0201644
-
-- \[30,40) frente a 40 o más: 0.0430582
-
-Esto mismo podemos relacionarlo con el boxplot de la ansiedad puesto que
-como vemos las medianas hasta los 40 años se mantienen estables
-mostrando un drástico descenso a partir de estos. Continuando con el
-estudio Tukey, en la depresión vemos que ocurre algo diferente, entre
-las edades más tempranas existe un p-valor que indica la significancia
-estadística, al igual que la comparación entre los grupos de 20 y 30 con
-los mayores a 40
-
-- \[20,30) frente a \[10,20): 0.0408
-
-- \[20,30) frente a 40 o más: 0.0191
-
-De nuevo en el boxplot observamos que las edades donde menor mediana
-existe y mayor diferencia hay entre el resto de edades son los que se
-encuentran entre 10 y 20 y los mayores de 40. Para terminar, las últimas
-dos enfermedades dan como resultado boxplot donde la mediana entre las
-edades es bastante similar, sobre todo en el caso del insomnio, y donde
-se podría encontrar una reducción de mediana más significante sería en
-el OCD a partir de los treinta.
-
-Siguiendo con el análisis, en la segunda tabla resumen se encuentran las
-medias por edad en las diferentes enfermedades mentales. En primer
-lugar, en la ansiedad se observa una semejanza en las medias
-encontrándose entre (5,95-6,10) hasta los cuarenta conde existe una
-reducción significativa de este valor a 4,33. Análogamente, se encuentra
-la depresión, en la que hasta los 40 se mantiene una media estable entre
-4,51 y 5,40, disminuyendo en la edad adulta a 3,33. Siguiendo este
-patrón es encuentra el OCD con una disminución significativa de la media
-a 1,83 a partir de los cuarenta, mientras que en edades anteriores se
-había mantenido entre 2,74 y 2,94. Por último, el insomnio en el que se
-observa que edades más temparanas entre los 10 y 30 años se mantiene
-estable, y a partir de los 30 aparece un aumento significativo de las
-medias llegando hasta 4,15.
-
-```{=html}
-<!-- A partir del análisis de las distribuciones por edad, se concluye
-que sí existe una relación entre los grupos de edad y la autoevaluación
-de los problemas de salud mental. Los participantes más jóvenes, que
-concentran la gran mayoría de la muestra (principalmente entre los 10 y
-30 años), presentan densidades más elevadas y puntuaciones más altas en
-la escala de autoevaluación, especialmente en ansiedad y depresión,
-mientras que los grupos de mayor edad muestran distribuciones
-desplazadas hacia valores considerablemente más bajos. No obstante,
-estas diferencias deben tomarse con cautela debido a la escasa
-representación de encuestados en los tramos superiores de edad. -->
 ```
 
 ## - ¿Predomina alguna edad con algún tipo de enfermedad mental?
@@ -1235,8 +1240,7 @@ pueden existir variables que no nos proporcionen información al *target*
 como sería la plataforma e incluso el género favorito u horas de
 escucha.
 
-##¿Es relevante saber la plataforma con la que escuchan música de cara a
-nuestra variable respuesta?
+## ¿Es relevante saber la plataforma con la que escuchan música de cara a nuestra variable respuesta?
 
 ```{r}
 ggplot(datos_train_imp, aes(x = plataforma, fill = efectos)) +
@@ -1341,7 +1345,9 @@ nula.
 Habiendo visto estas pruebas, parece ser que la variable plataforma no
 aporta a la hora de ver si un paciente mejora o no en nuestro estudio.
 Por lo que quizá sea de nuestro interes eliminarla en la próxima etapa
-del proyecto. ##¿Es relevante el género favorito por si solo?
+del proyecto.
+
+## ¿Es relevante el género favorito por si solo?
 
 ```{r}
 # Calcular los niveles medios de ansiedad y depresión según el género musical favorito
@@ -1371,9 +1377,9 @@ relación con los objetivos planteados:
 
     Los resultados del análisis de la varianza (ANOVA) confirmaron la
     existencia de diferencias estadísticamente significativas en los
-    niveles de ansiedad según los grupos de edad, puesto que el p-valor
-    es igual a 0.00184\<0.05 por lo que se rechaza la hipótesis nula (no
-    existe diferencia entre los grupos de edades). Los participantes más
+    niveles de ansiedad y depresión según los grupos de edad, puesto que
+    el p-valor es inferior 0.05 se rechaza la hipótesis nula (no existe
+    diferencia entre los grupos de edades). Los participantes más
     jóvenes presentan las puntuaciones medias más elevadas,
     especialmente en ansiedad y depresión, mientras que los tramos de
     edad avanzada muestran distribuciones notablemente más bajas.
@@ -1398,7 +1404,7 @@ relación con los objetivos planteados:
 A la hora de interpretar los resultados anteriores, es necesario tener
 en cuenta las siguientes limitaciones:
 
-1.  **Correlación frente a causalidad:** al tratarse de un estudio
+1.  **Correlación frente a casualidad:** al tratarse de un estudio
     observacional los datos permiten identificar tendencias de consumo y
     correlaciones (como el hecho de que personas con ansiedad escuchen
     determinados géneros), pero no establecen relaciones de causalidad.
