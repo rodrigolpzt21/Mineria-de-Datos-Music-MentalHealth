@@ -160,8 +160,8 @@ enfermedad mental?
 enfermedades mentales? ¿Cuáles son los géneros más/menos escuchados
 entre la gente con depresión/ansiedad/ocd/insomnia?
 
-¿Es relevante saber la plataforma con la que escuchan música de cara a nuestra
-variable respuesta?
+¿Es relevante saber la plataforma con la que escuchan música de cara a
+nuestra variable respuesta?
 
 ## Proceso de exploración
 
@@ -514,11 +514,12 @@ stripchart(datos_train$bpm,
            col = rgb(0, 0, 1, 0.3))
 ```
 
-####Información del "entendido/experto" 
-Los valores típicos de bpm en la música oscilan habitualmente entre los 40 y los
-220 bpm, pero podemos ver que tenemos 4 valores atípicos por debajo de 40 y 1 por
-encima de 220, además de tener en la partición 50 NA. Claramente la media está
-siendo afectada por el valor atípico superior, pues es varias escalas por encima.
+####Información del "entendido/experto" Los valores típicos de bpm en la
+música oscilan habitualmente entre los 40 y los 220 bpm, pero podemos
+ver que tenemos 4 valores atípicos por debajo de 40 y 1 por encima de
+220, además de tener en la partición 50 NA. Claramente la media está
+siendo afectada por el valor atípico superior, pues es varias escalas
+por encima.
 
 Vamos a transformar las entradas atípicas en NA por ahora, considerando
 que se han rellenado con desconocimiento, para poder analizar de forma
@@ -637,7 +638,10 @@ Ahora veamos un resumen global de los datos imputados.
 summary(datos_train_imp)
 print(dfSummary(datos_train_imp),method = "render")
 ```
-También nos falta eliminar los NA de la variable respuesta que no han sido imputados.
+
+También nos falta eliminar los NA de la variable respuesta que no han
+sido imputados.
+
 ```{r}
 datos_train_imp <- datos_train_imp[!is.na(datos_train_imp[[ncol(datos_train_imp)]]), ]
 ```
@@ -698,12 +702,13 @@ genero_menos_habitual <- conteo_generos %>% slice(n())
 cat("El género más habitual es:", genero_mas_habitual$genero_fav, "con", genero_mas_habitual$n, "personas.\n")
 cat("El género menos habitual es:", genero_menos_habitual$genero_fav, "con", genero_menos_habitual$n, "personas.\n")
 ```
+
 Podemos apreciar que el rock es el género que más se repite como el
 favorito de la gente y el menos habitual sin embargo son géneros
 minoritarios representados por la categoría otros géneros y el folk.
 
-Para visualizar mejor los datos de género favorito vamos a realizar un gráfico
-de barras horizontal.
+Para visualizar mejor los datos de género favorito vamos a realizar un
+gráfico de barras horizontal.
 
 ```{r}
 ggplot(datos_train_imp %>% filter(!is.na(genero_fav)), aes(x = reorder(genero_fav, genero_fav, function(x) length(x)), fill = genero_fav)) +
@@ -717,6 +722,7 @@ ggplot(datos_train_imp %>% filter(!is.na(genero_fav)), aes(x = reorder(genero_fa
   ) +
   theme_minimal()
 ```
+
 A partir del análisis de los datos de la encuesta, al observar la
 variable de género musical favorito, se aprecia claramente que el género
 preferido entre los participantes es el Rock, seguido por el Pop y que
@@ -938,6 +944,7 @@ más claros, lo que indica que sus puntuaciones medias de autoevaluación
 son considerablemente más bajas en la mayoría de los grupos.
 
 ## - ¿Existe algún género musical que tenga efecto positivo en alguna de las enfermedades mentales?
+
 Para responder a esta pregunta vamos a tomar a las personas que
 indicaron en la encuesta que la música tiene efecto positivo.
 
@@ -1228,7 +1235,9 @@ pueden existir variables que no nos proporcionen información al *target*
 como sería la plataforma e incluso el género favorito u horas de
 escucha.
 
-##¿Es relevante saber la plataforma con la que escuchan música de cara a nuestra variable respuesta?
+##¿Es relevante saber la plataforma con la que escuchan música de cara a
+nuestra variable respuesta?
+
 ```{r}
 ggplot(datos_train_imp, aes(x = plataforma, fill = efectos)) +
   geom_bar(position = "fill") +
@@ -1244,15 +1253,24 @@ ggplot(datos_train_imp, aes(x = plataforma, fill = efectos)) +
     axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1)
   )
 ```
-Por lo que podemos apreciar en el gráfico, todas las plataformas tienen proporciones similares.
-Pandora resalta por solo tener improve. Veamos cuantas muestras tenemos con pandora para verificar que no se deba una cantidad reducida de muestras. Y de paso comprobemos el resto de categorias. 
+
+Por lo que podemos apreciar en el gráfico, todas las plataformas tienen
+proporciones similares. Pandora resalta por solo tener improve. Veamos
+cuantas muestras tenemos con pandora para verificar que no se deba una
+cantidad reducida de muestras. Y de paso comprobemos el resto de
+categorias.
+
 ```{r}
 table(datos_train_imp$plataforma)
 ```
-Vemos que efectivamente pandora tiene solo 5 instancias, por lo que seguramente se deba a ello. 
-Además, se aprecia que Spotify es mucho más usada que las otras platadormas, hasta el punto que es superior a todas las demás juntas.
 
-Juntemoslas para comparar Spotify a las demás, para ver si el gráfico de barras entre Spotify y las demás se parecen más entre si. 
+Vemos que efectivamente pandora tiene solo 5 instancias, por lo que
+seguramente se deba a ello. Además, se aprecia que Spotify es mucho más
+usada que las otras platadormas, hasta el punto que es superior a todas
+las demás juntas.
+
+Juntemoslas para comparar Spotify a las demás, para ver si el gráfico de
+barras entre Spotify y las demás se parecen más entre si.
 
 ```{r}
 datos_train_agrupplat <- datos_train_imp
@@ -1276,36 +1294,55 @@ ggplot(datos_train_agrupplat, aes(x = plataforma, fill = efectos)) +
     axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1)
   )
 ```
-Como podemos apreciar al agruparlo, las distribuciones son identicas prácticamente. 
 
+Como podemos apreciar al agruparlo, las distribuciones son identicas
+prácticamente.
 
-También vamos a usar el test chi cuadrado con todas las categorias y luego probaremos con la versión de dos categorias solo.
+También vamos a usar el test chi cuadrado con todas las categorias y
+luego probaremos con la versión de dos categorias solo.
 
-La prueba de chi-cuadrado es una prueba estadística que sirve para determinar si existe una asociación significativa entre variables cualitativas o categóricas comparando lo que se ha observado en la realidad con lo que se esperaría obtener por azar. En este test la hipótesis nula es que las variables son independientes o no tienen relación. 
+La prueba de chi-cuadrado es una prueba estadística que sirve para
+determinar si existe una asociación significativa entre variables
+cualitativas o categóricas comparando lo que se ha observado en la
+realidad con lo que se esperaría obtener por azar. En este test la
+hipótesis nula es que las variables son independientes o no tienen
+relación.
 
 ```{r}
 chisq.test(table(datos_train_imp$plataforma, datos_train_imp$efectos))
 ```
-El p-valor es de 0,9, por lo que no podemos rechazar la hipótesis nula de que sean independientes,
-por lo que parece la variable plataforma no influye en nuestra variable efecto.
 
-Aun así como nos sale en el test chi cuadrado un warning en el que puede ser incorrecto, debido a que algunas muestras en algunas categorías no son suficientes, probaremos con el test de fisher que funciona similar. 
+El p-valor es de 0,9, por lo que no podemos rechazar la hipótesis nula
+de que sean independientes, por lo que parece la variable plataforma no
+influye en nuestra variable efecto.
+
+Aun así como nos sale en el test chi cuadrado un warning en el que puede
+ser incorrecto, debido a que algunas muestras en algunas categorías no
+son suficientes, probaremos con el test de fisher que funciona similar.
 
 ```{r}
 
 fisher.test(table(datos_train_imp$plataforma, datos_train_imp$efectos), simulate.p.value = TRUE)
 ```
-El resultado de este test, reafirma lo visto con el test chi-cuadrado. 
+
+El resultado de este test, reafirma lo visto con el test chi-cuadrado.
 
 Probemos ahora con solo dos categorias.
+
 ```{r}
 chisq.test(table(datos_train_agrupplat$plataforma, datos_train_agrupplat$efectos))
 fisher.test(table(datos_train_agrupplat$plataforma, datos_train_agrupplat$efectos), simulate.p.value = TRUE)
 ```
-Aunque el p-valor de los test, es menor en este caso para ambos test, sigue siendo suficiente alto como para no poder rechazar la hipótesis nula.
 
-Habiendo visto estas pruebas, parece ser que la variable plataforma no aporta a la hora de ver si un paciente mejora o no en nuestro estudio. Por lo que quizá sea de nuestro interes eliminarla en la próxima etapa del proyecto.
-##¿Es relevante el género favorito por si solo?
+Aunque el p-valor de los test, es menor en este caso para ambos test,
+sigue siendo suficiente alto como para no poder rechazar la hipótesis
+nula.
+
+Habiendo visto estas pruebas, parece ser que la variable plataforma no
+aporta a la hora de ver si un paciente mejora o no en nuestro estudio.
+Por lo que quizá sea de nuestro interes eliminarla en la próxima etapa
+del proyecto. ##¿Es relevante el género favorito por si solo?
+
 ```{r}
 # Calcular los niveles medios de ansiedad y depresión según el género musical favorito
 efecto_genero <- datos_train_imp %>%
@@ -1319,6 +1356,7 @@ efecto_genero <- datos_train_imp %>%
 
 efecto_genero
 ```
+
 ## Principales hallazgos y conclusiones
 
 A partir del análisis exploratorio del conjunto de datos sobre música y
