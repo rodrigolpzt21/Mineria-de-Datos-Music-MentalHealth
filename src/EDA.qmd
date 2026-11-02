@@ -1,7 +1,7 @@
 ---
 title: "Analisis Exploratorio de Datos"
 subtitle: "Primera entrega minería de datos"
-author: "Carolina Díaz Alende,María,Rodrigo"
+author: "Carolina Díaz Alende,María Díaz Ramos,Rodrigo López Torres"
 date: today
 date-format: "DD [de] MMMM [de] YYYY"
 lang: es
@@ -666,8 +666,68 @@ corrplot(matriz_cor, method = "color", type = "upper",
 La correlación que más llama la atención es la de ansiedad y depresión
 que es la más alta entre todas aunque no deja de ser solo de 0,51.
 
-Seguimos con un diagrama de cajas para ver la relación de efectos con la
-cantidad de horas de escucha de música.
+Como hemos visto que la correlación que más llama la atención es entre
+ansiedad y depresión, vamos a realizar un modelo de regresión lineal
+entre ellas.
+
+```{r}
+modelo_depresion_ansiedad <- lm(depresion ~ ansiedad, data = datos_train_imp)
+summary(modelo_depresion_ansiedad)
+
+ggplot(datos_train_imp, aes(x = ansiedad, y = depresion)) +
+  geom_point(alpha = 0.4) +
+  geom_smooth(method = "lm", se = TRUE) +
+  labs(
+    title = "Regresión Lineal: Depresión vs Ansiedad",
+    x = "Nivel de Ansiedad",
+    y = "Nivel de Depresión"
+  ) +
+  theme_minimal()
+```
+
+Según el modelo, por cada punto de ansiedad, aumenta la depresión 0,54
+puntos. Además el p-valor es muy inferior a 0,05, por lo que hay una
+relación estadísticamente significativa entre estas dos variables.
+Además, el estadístico F es suficientemente grande, por lo que el modelo
+calcula una cantidad relevante de información, pues es el ratio entre la
+variabilidad explicada y la no explicada. Con solo la ansiedad (según es
+R\^2 ajustado) podemos explicar un 25% de la variabilidad de la
+depresión.
+
+```{r}
+modelo_depresion_ansiedad_insomnio <- lm(depresion ~ ansiedad+insomnio, data = datos_train_imp)
+summary(modelo_depresion_ansiedad_insomnio)
+```
+
+Por curiosidad, al ser la correlación entre depresión e insomnio de 0,4,
+hemos, hecho un modelo multilineal, el cual sigue saliendo
+significativo, aumentando la variabilidad explicada hasta un 32%
+(Ansiedad e insomnio respecto depresión).
+
+```{r}
+anova(modelo_depresion_ansiedad, modelo_depresion_ansiedad_insomnio)
+```
+
+Al comparar los dos modelos, vemos que el error se reduce bastante el
+error, además el p-valor que nos da el ANOVA es suficientemente pequeño
+como para rechazar la hipotesis nula de que añadir insomnio no mejora la
+explicabilidad de la variable depresión.
+
+Viendo estos modelos, parece ser que por lo menos estas 3 variables van
+a ir de la mano. Probemos a terminar de añadir la otra enfermedad (ocd).
+
+```{r}
+modelo_dep_todo <- lm(depresion ~ ansiedad+insomnio+ocd, data = datos_train_imp)
+summary(modelo_dep_todo)
+```
+
+En este caso el añadir la variable ha reducido el R\^2 ajustado, frente
+al modelo anterior, por lo que añadir esta variable no compensa (el R\^2
+ajustado penaliza , ya que sino de por si, el R\^2 crecería siempre con
+cada variable).
+
+Seguimos nuestro análisis con un diagrama de cajas para ver la relación
+de efectos con la cantidad de horas de escucha de música.
 
 ```{r}
 #Diagrama de cajas 
@@ -686,8 +746,59 @@ con medianas similares. Por otro lado los que empeoran parecen escuchar
 algo menos de música, aunque habría que profundizar, antes de sacar
 conclusiones, pues la diferencia es bastante pequeña.
 
-Por otro lado podremos comenzar a estudiar algunas de las preguntas
-hechas al comienzo del trabajo.
+Ahora, ya que hemos entrado en el análisis de algunos datos relacionados
+con los hábitos, probemos a realizar modelos multilineales entre las
+enfermedades y los hábitos musicales de las personas (horas_pd, músico,
+extranjero, explorador, etc).
+
+```{r}
+modelo_multilineal_depresion <- lm(depresion ~ horas_pd+ trabajando + instrumentista + musico+explorador+extranjero, 
+  data = datos_train_imp)
+summary(modelo_multilineal_depresion)
+modelo_multilineal_ocd <- lm(ocd ~ horas_pd+ trabajando + instrumentista + musico+explorador+extranjero, 
+  data = datos_train_imp)
+summary(modelo_multilineal_ocd)
+modelo_multilineal_insomnio <- lm(insomnio ~ horas_pd+ trabajando + instrumentista + musico+explorador+extranjero, 
+  data = datos_train_imp)
+summary(modelo_multilineal_insomnio)
+modelo_multilineal_ansiedad <- lm(ansiedad ~ horas_pd+ trabajando + instrumentista + musico+explorador+extranjero, 
+  data = datos_train_imp)
+summary(modelo_multilineal_ansiedad)
+```
+
+Vemos que los 4 modelos multilineales tienen estadísticos f muy cercanos
+a 1, lo que es una señal de que son malos modelos. Además, los R\^2 no
+son nada altos por lo que estos modelos no explican apenas la
+variabilidad total. Además, la única variable que a nivel individual
+tiene siempre su p-valor por debajo o a nada de ser 0,05 es la variable
+horas_pd, siendo entonces la única variable significativa a nivel
+individual del modelo.
+
+Así pues, parece ser que los hábitos musicales a excepción por ahora de
+las horas por día, no tienen mucha relación con la autopercepción de las
+enfermedades mentales.
+
+Probemos ahora solo con las horas por día y los transtornos.
+
+```{r}
+modelo_horas_depresion <- lm(depresion ~ horas_pd, data = datos_train_imp)
+summary(modelo_horas_depresion)
+modelo_horas_insomnio <- lm(insomnio ~ horas_pd, data = datos_train_imp)
+summary(modelo_horas_insomnio)
+modelo_horas_ansiedad <- lm(ansiedad ~ horas_pd, data = datos_train_imp)
+summary(modelo_horas_ansiedad)
+modelo_horas_ocd <- lm(ocd ~ horas_pd, data = datos_train_imp)
+summary(modelo_horas_ocd)
+```
+
+Vemos así que la variable por si sola si que ha mejorado los
+estadisticos F y que ahora siempre su p-valor está por debajo de 0,05.
+Aunque, el R\^2 no consigue superar el 0,05 (por tanto para ningún
+transtorno esta variable por si sola explica tan si quiera el 5% de la
+variabilidad total).
+
+Habiendo tratado algunos temas generales, centremonos ahora en estudiar
+algunas de las preguntas hechas al comienzo del trabajo.
 
 \- **¿Qué género de música es el más habitual entre los géneros
 favoritos? ¿Y el que menos?**
@@ -1442,7 +1553,12 @@ A partir del análisis exploratorio del conjunto de datos sobre música y
 salud mental, podemos extraer los siguientes hallazgos relevantes en
 relación con los objetivos planteados:
 
-1.  **Relación entre la edad y los problemas de salud mental:** La
+1.  **Relación multilineal entre transtornos:** tras la tabla de
+    correlaciones y habiendo simulado algunos modelos lineales y
+    multiliales, parece haber indicios de relaciones lineales entre
+    depresión, ansiedad e insomnio.
+
+2.  **Relación entre la edad y los problemas de salud mental:** La
     muestra que encuentra fuertemente sesgada hacia los tramos de edad
     más jóvenes, concentrando la gran mayoría de las respuestas en
     participantes de entre 10 y 30 años, con una escasa representación
@@ -1457,7 +1573,7 @@ relación con los objetivos planteados:
     especialmente en ansiedad y depresión, mientras que los tramos de
     edad avanzada muestran distribuciones notablemente más bajas.
 
-2.  **Patrones de consumo musical:** Al analizar tanto las preferencias
+3.  **Patrones de consumo musical:** Al analizar tanto las preferencias
     declaradas como las frecuencias de escucha globales, el Rock se
     posiciona con claridad como el género musical más habitual entre los
     participantes, seguido muy de cerca por el Pop. En el extremo
@@ -1465,7 +1581,20 @@ relación con los objetivos planteados:
     de escucha en la muestra son el Folk y Otros Géneros (géneros
     minoritarios).
 
-3.  **Percepción del efecto de la música y hábitos en perfiles**
+4.  **Variables excluidas o en cuarentena:** variables planteadas
+    inicialmente como los pulsos por minuto (BPM), mostraban un alto
+    porcentaje de valores nulos y poca relevancia explicativa sobre la
+    variable respuesta tras los test de importancia. Los BPM representan
+    una métrica acústica y objetiva del ritmo. Al tener que excluir esta
+    variable el estudio renuncia a analizar si la velocidad o el tempo
+    de la música tiene un impacto real en las enfermedades.
+
+5.  **Relevancia de otras variables:** mientras que hemos visto que
+    claramente y como era de esperar la plataforma no influye en nuestro
+    target, con la varible genero_fav hemos aclarado nuestras dudas y
+    visto que si puede tener relevancia en nuestro estudio.
+
+6.  **Percepción del efecto de la música y hábitos en perfiles**
     **clínicos:** Una gran mayoría de los participantes percibe que la
     escucha musical genera un impacto positivo o de mejora (*Improve*)
     en su estado mental general.
@@ -1497,19 +1626,6 @@ en cuenta las siguientes limitaciones:
     representativos de los usuarios que respondieron al formulario, pero
     no son generalizables a la población general debido a la falta de
     equilibrio en los rangos de edad.
-
-4.  **Variables excluidas o en cuarentena:** variables planteadas
-    inicialmente como los pulsos por minuto (BPM), mostraban un alto
-    porcentaje de valores nulos y poca relevancia explicativa sobre la
-    variable respuesta tras los test de importancia. Los BPM representan
-    una métrica acústica y objetiva del ritmo. Al tener que excluir esta
-    variable el estudio renuncia a analizar si la velocidad o el tempo
-    de la música tiene un impacto real en las enfermedades.
-
-5.  **Relevancia de otras variables:** mientras que hemos visto que
-    claramente y como era de esperar la plataforma no influye en nuestro
-    target, con la varible genero_fav hemos aclarado nuestras dudas y
-    visto que si puede tener relevancia en nuestro estudio.
 
 ## Uso de Inteligencia Artificial
 
