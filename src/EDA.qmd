@@ -127,10 +127,11 @@ al español y de forma simplificada para un seguimiento más sencillo.
 ```{r}
 colnames(datos) <- c("fecha","edad", "plataforma", "horas_pd", "trabajando", "instrumentista", "musico", "genero_fav", "explorador", "extranjero", "bpm", "f_clasica", "f_country", "f_edm", "f_folk", "f_gospel", "f_hiphop", "f_jazz", "f_kpop", "f_latin", "f_lofi", "f_metal","f_pop", "f_ryb", "f_rap", "f_rock", "f_vgm", "ansiedad", "depresion", "insomnio", "ocd","efectos","permisos")
 ```
+**Esquema inicial de exploración**
 
-Presentar nuestro esquema: Primero realizaremos un primer acercamiento
-general a los datos totales sin modificarlos, viendo cada variable a ver
-si detectamos problemas generales e información general de nuestras var.
+Primero realizaremos un primer acercamiento general a los datos totales sin 
+modificarlos, viendo cada variable a ver si detectamos problemas generales e 
+información general de nuestras vaiables.
 
 Luego haremos las modificaciones prepartición que no afecten a nuestro
 estudio y que no puedan estar basadas en sesgos.
@@ -163,6 +164,8 @@ entre la gente con depresión/ansiedad/ocd/insomnia?
 
 ¿Es relevante saber la plataforma con la que escuchan música de cara a
 nuestra variable respuesta?
+
+¿Que tan relevante es el género favorito?
 
 ## Proceso de exploración
 
@@ -939,6 +942,13 @@ más claros, lo que indica que sus puntuaciones medias de autoevaluación
 son considerablemente más bajas en la mayoría de los grupos.
 
 ## - ¿Existe algún género musical que tenga efecto positivo en alguna de las enfermedades mentales?
+## - ¿Cuáles son los géneros más/menos escuchados entre la gente con depresión/ansiedad/ocd/insomnia?
+Estas preguntas pueden ser interesantes de investigar a la vez ya que en ambas
+vamos a explorar las variables frecuencias y nos pueden ayudar a no caer en deducciones 
+precipitadas.
+
+Empezamos con la pregunta, ¿Existe algún género musical que tenga efecto positivo
+en alguna de las enfermedades mentales?
 
 Para responder a esta pregunta vamos a tomar a las personas que
 indicaron en la encuesta que la música tiene efecto positivo.
@@ -1119,7 +1129,12 @@ Vemos con este análisis un pequeño patron, en el que las frecuencias de escuch
 más altas entre las personas que hemos considerado que están en un rango bajo de 
 los problemas de salud mental, son el género de pop y rock, a primera vista. 
 
-## - ¿Cuáles son los géneros más/menos escuchados entre la gente con depresión/ansiedad/ocd/insomnia?
+Aun así, quizá que esta media de frecuencias sea alta, se deba a que son géneros 
+más populares. 
+Por ello es momento de tratar la segunda pregunta.
+
+¿Cuáles son los géneros más/menos escuchados entre la gente con depresión/ansiedad/ocd/insomnia?
+
 Recordemos:
 | Enfermedad | Bajo | Punto medio| Alto|
 | :--- | :---: | ---: | ---: |
@@ -1127,6 +1142,7 @@ Recordemos:
 | Depresion | 0-3 | 4 | 5-10 |
 | Ansiedad | 0-4 |5 | 6-10 |
 |OCD| 0-2 | 3 | 4-10 |
+
 Vamos a fijarnos ahora en las personas con un rango que consideramos alto en la 
 autopercepción de la enfermedad.
 
@@ -1203,6 +1219,11 @@ general de la muestra. Los géneros más escuchados de manera habitual por
 estas personas siguen siendo el Rock y el Pop. Por el contrario, los
 géneros menos escuchados coinciden en los niveles más bajos de la
 escala, destacando el Gospel y el Latin.
+
+Por lo que por ahora, no podemos sacar una conclusión de que un género particular
+cause un efecto positivo de primera mano. En etapas posteriores con combinación de
+variables y técnicas como el clustering, podremos indagar más a fondo en estos 
+posibles beneficios. 
 
 Una vez se tiene una exploración global de los datos, enfocaremos
 nuestro estudio en la predicción que buscamos analizar. Observamos que
@@ -1317,7 +1338,8 @@ aporta a la hora de ver si un paciente mejora o no en nuestro estudio.
 Por lo que quizá sea de nuestro interes eliminarla en la próxima etapa
 del proyecto.
 
-## ¿Es relevante el género favorito por si solo?
+## ¿Que tan relevante es el género favorito por si solo?
+
 ```{r}
 #Porcentaje de efecto positivo por genero_fav
 efecto_por_genero <- datos_train_imp %>%
@@ -1332,24 +1354,74 @@ efecto_por_genero <- datos_train_imp %>%
 print(efecto_por_genero)
 
 #Prueba estadística de Chi-cuadrado para ver si la relación es significativa
-tabla_contingencia <- table(datos_train_imp$genero_fav, datos_train_imp$efectos)
-chisq.test(tabla_contingencia)
+tabla_genfav <- table(datos_train_imp$genero_fav, datos_train_imp$efectos)
+chisq.test(tabla_genfav)
+fisher.test(tabla_genfav, simulate.p.value = TRUE)
 ```
+
+Al realizar el test chi cuadrado, vemos que tenemos un valor de 37 con 26 grados
+de libertad lo que no es especialmente alto, por tanto la diferencia entre lo 
+observado y lo esperado aún puede deberse al azar. 
+
+El p-valor tanto en la prueba chi-cuadrado como la de fisher, esta entre 0,07 y cerca de 0,08, 
+aunque con esto no podemos rechazar la hipótesis nula de que no existe asociación entre 
+el género musical favorito y el efecto observado, si que está en el límite de poder
+rechazarse. 
 
 
 ```{r}
-# Calcular los niveles medios de ansiedad y depresión según el género musical favorito
-efecto_genero <- datos_train_imp %>%
+efecto_genero_Ansiedad <- datos_train_imp %>%
   group_by(genero_fav) %>%
   summarise(
     Media_Ansiedad = round(mean(ansiedad, na.rm = TRUE), 2),
-    Media_Depresion = round(mean(depresion, na.rm = TRUE), 2),
     Total_Personas = n()
   ) %>%
   arrange(desc(Media_Ansiedad))
+efecto_genero_Ansiedad
 
-efecto_genero
+efecto_genero_Depresion <- datos_train_imp %>%
+  group_by(genero_fav) %>%
+  summarise(
+    Media_Depresion = round(mean(depresion, na.rm = TRUE), 2),
+    Total_Personas = n()
+  ) %>%
+  arrange(desc(Media_Depresion))
+efecto_genero_Depresion
+efecto_genero_Insomnio <- datos_train_imp %>%
+  group_by(genero_fav) %>%
+  summarise(
+    Media_Insomnio = round(mean(insomnio, na.rm = TRUE), 2),
+    Total_Personas = n()
+  ) %>%
+  arrange(desc(Media_Insomnio))
+efecto_genero_Insomnio
+
+efecto_genero_Ocd <- datos_train_imp %>%
+  group_by(genero_fav) %>%
+  summarise(
+    Media_Ocd = round(mean(ocd, na.rm = TRUE), 2),
+    Total_Personas = n()
+  ) %>%
+  arrange(desc(Media_Ocd))
+efecto_genero_Ocd
 ```
+Al analizar estas tablas de medias por género favorito, no parece que podamos sacar
+muchas conclusiones respecto a géneros que nos generaban dudas en las preguntas anteriores
+como han sido el pop y el rock. Pero si que llama la atención que las personas cuyo 
+género favorito es la música clásica tenga en los cuatro casos una de las 5 menores
+medias entre los géneros, teniendo un número de personas significativo en la muestra train.
+Esto también pasa con el género R&B.
+
+Por lo que quizá la variable genero_fav, si tenga alguna relevancia en relación 
+a los índices de autopercepción de las enfermedades. 
+
+Por tanto por ahora, teniendo en cuensta los test anteriores y estas tablas de medias,
+podemos decir que a pesar de que el p-valor en relación con la variable efecto, 
+no parece ser lo más significativa posible por estar al límite, no hemos podido concluir 
+que no esté relacionada. Y viendo que hay posibles patrones como el observado con 
+el género música clásica y los índices de autopercepción, diremos que la variable 
+si va a ser relevante. La medida en lo que esta variable lo sea, se verá en la
+siguiente etapa en donde empezaremos a reducir dimensiones y realizar clustering.
 
 ## Principales hallazgos y conclusiones
 
@@ -1377,10 +1449,10 @@ relación con los objetivos planteados:
     posiciona con claridad como el género musical más habitual entre los
     participantes, seguido muy de cerca por el Pop. En el extremo
     opuesto, los géneros con menor representación y menores frecuencias
-    de escucha en la muestra son el Latin y el Gospel.
+    de escucha en la muestra son el Folk y Otros Géneros (géneros minoritarios).
 
-3.  **Percepsión del efecto de la música y hábitos en perfiles
-    clínicos:** Una gran mayoría de los participantes percibe que la
+3.  **Percepción del efecto de la música y hábitos en perfiles**
+    **clínicos:** Una gran mayoría de los participantes percibe que la
     escucha musical genera un impacto positivo o de mejora (*Improve*)
     en su estado mental general.
 
@@ -1392,27 +1464,37 @@ relación con los objetivos planteados:
 A la hora de interpretar los resultados anteriores, es necesario tener
 en cuenta las siguientes limitaciones:
 
-1.  **Correlación frente a casualidad:** al tratarse de un estudio
+3.1.  **Correlación frente a casualidad:** al tratarse de un estudio
     observacional los datos permiten identificar tendencias de consumo y
     correlaciones (como el hecho de que personas con ansiedad escuchen
     determinados géneros), pero no establecen relaciones de causalidad.
     No es posible concluir que un género musical específico cure, cause
     o reduzca directamente una patología mental.
-2.  **Sesgo de popularidad:** La predominancia del Rock y del Pop en los
+3.2.  **Sesgo de popularidad:** La predominancia del Rock y del Pop en los
     perfiles con ansiedad o depresión responde fundamentalmente a un
     efecto de popularidad (son los géneros más consumidos por toda la
     muestra en general), y no necesariamente a una propiedad terapéutica
     exclusiva de dichos géneros.
-3.  **Representatividad de la muestra:** Los datos provienen de una
+3.3.  **Representatividad de la muestra:** Los datos provienen de una
     muestra recopilada a través de redes sociales (como Discord o
     Reddit) de manera voluntaria. Por lo tanto, los resultados son
     representativos de los usuarios que respondieron al formulario, pero
     no son generalizables a la población general debido a la falta de
     equilibrio en los rangos de edad.
-4.  **Variables excluidas o en cuarentena:** variables planteadas
+3.4.  **Variables excluidas o en cuarentena:** variables planteadas
     inicialmente como los pulsos por minuto (BPM), mostraban un alto
     porcentaje de valores nulos y poca relevancia explicativa sobre la
     variable respuesta tras los test de importancia. Los BPM representan
     una métrica acústica y objetiva del ritmo. Al tener que excluir esta
     variable el estudio renuncia a analizar si la velocidad o el tempo
     de la música tiene un impacto real en las enfermedades.
+    
+4.  **Cuarentena de la variable bpm:** la variable bpm nos ha dado motivos
+    para dejarla aislada, pues nos ha generado desconfianza y no parecía ser
+    relevante con nuestra variable respuesta principal efecto.
+    
+5.  **Relevancia de otras variables:** mientras que hemos visto que claramente
+    y como era de esperar la plataforma no influye en nuestro target, con la 
+    varible genero_fav hemos aclarado nuestras dudas y visto que si puede tener
+    relevancia en nuestro estudio. 
+    
