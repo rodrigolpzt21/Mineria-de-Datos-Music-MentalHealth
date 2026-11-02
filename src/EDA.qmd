@@ -127,18 +127,17 @@ al español y de forma simplificada para un seguimiento más sencillo.
 ```{r}
 colnames(datos) <- c("fecha","edad", "plataforma", "horas_pd", "trabajando", "instrumentista", "musico", "genero_fav", "explorador", "extranjero", "bpm", "f_clasica", "f_country", "f_edm", "f_folk", "f_gospel", "f_hiphop", "f_jazz", "f_kpop", "f_latin", "f_lofi", "f_metal","f_pop", "f_ryb", "f_rap", "f_rock", "f_vgm", "ansiedad", "depresion", "insomnio", "ocd","efectos","permisos")
 ```
+
 **Esquema inicial de exploración**
 
-Primero realizaremos un primer acercamiento general a los datos totales sin 
-modificarlos, viendo cada variable a ver si detectamos problemas generales e 
-información general de nuestras vaiables.
+Primero realizaremos un primer acercamiento general a los datos totales
+sin modificarlos, viendo cada variable para ver si detectamos problemas
+generales e información general de ellas.
 
 Luego haremos las modificaciones prepartición que no afecten a nuestro
-estudio y que no puedan estar basadas en sesgos.
-
-Realizaremos la partición y empezaremos a analizar las variables con las
-que podamos tener dudas para ver su validez en relación a nuestra
-variable objetivo.
+estudio y que no estén basadas en sesgos. Realizaremos la partición y
+empezaremos a analizar las variables con las que podamos tener dudas
+para ver su validez en relación a nuestra variable objetivo.
 
 Una vez resueltas las sospechas con las variables dudosas, procederemos
 a analizar los datos faltantes de las variables y realizaremos una
@@ -151,6 +150,9 @@ Buscando encontrar estrategias para proseguir nuestro proyecto, como
 clusters, ingeniería de variables, etc.
 
 ## Preguntas de partida
+
+Formulamos las preguntas que inicialmente queremos estudiar a partir de
+nuestros datos.
 
 ¿Existe alguna relación entre grupos de edades y el padecimiento de
 alguna enfermedad mental?¿Predomina alguna edad con algún tipo de
@@ -192,7 +194,7 @@ Podemos observar que hay unos vacíos en los datos, que debemos
 investigar. Ejemplo de ello en el str, es en efectos, que tenemos las
 dos primeras entradas vacias (NA).
 
-#### Vamos a ir revisando las variables una a una.
+Vamos a ir revisando las variables una a una.
 
 **Fecha:** Observamos que cada persona tiene una fecha distinta.
 Teniendo en cuenta el contexto de nuestra investigación, la fecha de
@@ -419,7 +421,7 @@ table(datos_factor$permisos, useNA = 'always')
 Ya hemos analizado nuestro conjunto de datos por encima, aunque tenemos
 algunas dudas sobre algunas variables candidatas a ser eliminadas, hay
 dos que son claras y que podemos eliminar antes de la partición de
-nuestros datos. Estas son la fecha y la el consentimiento. También
+nuestros datos. Estas son la fecha y el consentimiento. También
 agruparemos algunas de nuestras categorias de género favorito en otros
 géneros.
 
@@ -433,7 +435,7 @@ datos_preparticion <- datos_factor[, -c(1, ncol(datos_factor))]
 head(datos_preparticion)
 ```
 
-### Partición de los datos
+**Partición de los datos**
 
 Dada la cantidad de datos decidimos realizar una partición train
 (0.52)-test (0.28) -validación (0.2).
@@ -443,13 +445,14 @@ set.seed(154684)
 idx_tt_val <- createDataPartition(datos_preparticion$efectos,p = 0.8)
 ```
 
-Conjunto train-test (hay que volver a dividirlo)
+Conjunto train-test (hay que volver a dividirlo).
 
 ```{r}
 datos_tt <- datos_preparticion[idx_tt_val$Resample1,]
 dim(datos_tt)
 ```
-Volvemos a dividir train-test
+
+Volvemos a dividir train-test.
 
 ```{r}
 set.seed(154684)
@@ -463,6 +466,7 @@ dim(datos_train)
 datos_test <- datos_tt[-idx_tt$Resample1,]
 dim(datos_test)
 ```
+
 Conjunto de validación que no usaremos más hasta el final.
 
 ```{r}
@@ -470,9 +474,10 @@ datos_val <- datos_preparticion[-idx_tt_val$Resample1,]
 dim(datos_val)
 ```
 
-### Continuamos con el EDA
+**Continuamos con el EDA**
 
-Ahora ya solo continuaremos con el conjunto de entrenamiento datos_train.
+Ahora ya solo continuaremos con el conjunto de entrenamiento
+datos_train.
 
 En la primera parte del análisis, vimos que la variable bpm nos generaba
 dudas de su utilidad, por sus valores y por la gran cantidad de datos
@@ -515,12 +520,11 @@ stripchart(datos_train$bpm,
            col = rgb(0, 0, 1, 0.3))
 ```
 
-####Información del "entendido/experto"
-Los valores típicos de bpm en la música oscilan habitualmente entre
-los 40 y los 220 bpm, pero podemos ver que tenemos 4 valores atípicos por debajo
-de 40 y 1 por encima de 220, además de tener en la partición 50 NA. 
-Claramente la media está siendo afectada por el valor atípico superior, pues 
-está varias escalas por encima.
+Los valores típicos de bpm en la música oscilan habitualmente entre los
+40 y los 220 bpm, pero podemos ver que tenemos 4 valores atípicos por
+debajo de 40 y 1 por encima de 220, además de tener en la partición 50
+NA. Claramente la media está siendo afectada por el valor atípico
+superior, pues está varias escalas por encima.
 
 Vamos a transformar las entradas atípicas en NA por ahora, considerando
 que se han rellenado con desconocimiento, para poder analizar de forma
@@ -543,12 +547,14 @@ ggplot(subset(datos_train, !is.na(bpm)), aes(y = bpm)) +
   labs(title = "Boxplot de BPM limpio de valores anómalos (Escala 0 - 230)", y = "BPM") +
   theme_minimal()
 ```
-Vemos que el boxplot se concentra entre 100 y 150, con un valor más límite en 120.
 
-Por otro lado, nos sale un porcentaje que puede ser bastante significativo, vamos a
-profundizar el análisis. Para ello vamos a ver un boxplot con efectos,
-hacer un anova y utilizar métodos que nos digan la ganancia de
-información que aporta la variable.
+Vemos que el boxplot se concentra entre 100 y 150, con un valor más
+límite en 120.
+
+Por otro lado, nos sale un porcentaje que puede ser bastante
+significativo, vamos a profundizar el análisis. Para ello vamos a ver un
+boxplot con efectos, hacer un anova y utilizar métodos que nos digan la
+ganancia de información que aporta la variable.
 
 ```{r}
 #Comparar la distribución de BPM con la variable respuesta efecto
@@ -564,7 +570,7 @@ information_gain(efectos ~ bpm, data = datos_train)
 **Resultado boxplot:** Vemos que tienen medianas similares, entorno a
 120 ,en los tres outputs de la variable respuesta, sumado a que parecen
 tener distribuciones similares, es el primer indicio de que no aporta
-mucho esta variable. 
+mucho esta variable.
 
 **Anova y test de aporte:** al realizar un anova, nos da un p-valor muy
 alto de 0,87, por lo que no hay evidencia suficiente para rechazar la
@@ -573,8 +579,9 @@ medias de los grupos. Además, el test de importancia nos dice que a lo
 sumo aporta un 0,56% de la información en la variable respuesta. Lo que
 es despreciable.
 
-**Test de ganancia de informacion: ** este test nos da 0, por lo que la variable
-no parece aportar nada de inforación para la variable respuesta. 
+**Test de ganancia de informacion:** este test nos da 0, por lo que la
+variable no parece aportar nada de inforación para la variable
+respuesta.
 
 Por todos estos resultados junto con la gran cantidad de datos faltantes
 de esta variable, podemos concluir que esta variable parece no
@@ -640,7 +647,7 @@ sido imputados.
 datos_train_imp <- datos_train_imp[!is.na(datos_train_imp[[ncol(datos_train_imp)]]), ]
 ```
 
-#### Ahora miremos algunos gráficos para seguir explorando los datos.
+**Ahora miremos algunos gráficos para seguir explorando los datos.**
 
 Veamos la matriz de correlaciones de las variables numéricas
 
@@ -655,6 +662,7 @@ print(matriz_cor)
 corrplot(matriz_cor, method = "color", type = "upper", 
          tl.col = "black", tl.srt = 45, addCoef.col = "black")
 ```
+
 La correlación que más llama la atención es la de ansiedad y depresión
 que es la más alta entre todas aunque no deja de ser solo de 0,51.
 
@@ -681,7 +689,8 @@ conclusiones, pues la diferencia es bastante pequeña.
 Por otro lado podremos comenzar a estudiar algunas de las preguntas
 hechas al comienzo del trabajo.
 
-## - ¿Qué género de música es el más habitual entre los géneros favoritos? ¿Y el que menos?
+\- **¿Qué género de música es el más habitual entre los géneros
+favoritos? ¿Y el que menos?**
 
 ```{r}
 conteo_generos <- datos_train_imp %>%
@@ -695,6 +704,7 @@ genero_menos_habitual <- conteo_generos %>% slice(n())
 cat("El género más habitual es:", genero_mas_habitual$genero_fav, "con", genero_mas_habitual$n, "personas.\n")
 cat("El género menos habitual es:", genero_menos_habitual$genero_fav, "con", genero_menos_habitual$n, "personas.\n")
 ```
+
 Podemos apreciar que el rock es el género que más se repite como el
 favorito de la gente y el menos habitual sin embargo son géneros
 minoritarios representados por la categoría otros géneros.
@@ -714,16 +724,15 @@ ggplot(datos_train_imp %>% filter(!is.na(genero_fav)), aes(x = reorder(genero_fa
   ) +
   theme_minimal()
 ```
-Gracias al gráfico vemos que el folk también está empatado con otros géneros, como
-género menos elegido como favorito. 
+
+Gracias al gráfico vemos que el folk también está empatado con otros
+géneros, como género menos elegido como favorito.
 
 A partir del análisis de los datos de la encuesta, al observar la
 variable de género musical favorito, se aprecia claramente que el género
 preferido entre los participantes es el Rock, seguido por el Pop y que
 los géneros con menor representación como favoritos son el folk y el
 conjunto de otros géneros.
-
-## - ¿Existe alguna relación entre grupos de edades y el padecimiento de alguna enfermedad mental?
 
 Para ello primero agruparemos por edad de 10 en diez a los participante
 
@@ -877,7 +886,7 @@ Análogamente, se encuentra la depresión, en la que hasta los 40 se
 mantiene una media estable entre 4,51 y 5,38, disminuyendo en la edad
 adulta a 3,72. Siguiendo este patrón es encuentra el OCD con una
 disminución significativa de la media a 1,83 a partir de los cuarenta,
-mientras que en edades anteriores se había mantenido entre 2,76r y 2,94.
+mientras que en edades anteriores se había mantenido entre 2,76 y 2,94.
 Por último, el insomnio en el que se observa que edades más temparanas
 entre los 10 y 30 años se mantiene estable, y a partir de los 30 aparece
 un aumento significativo de las medias llegando hasta 4,15.
@@ -910,7 +919,7 @@ ggplot(datosdensidad, aes(x = `Escala de autoevaluacion`, colour = Trastorno, fi
   theme_minimal()
 ```
 
-## - ¿Predomina alguna edad con algún tipo de enfermedad mental?
+\- **¿Predomina alguna edad con algún tipo de enfermedad mental?**
 
 ```{r}
 # Pasamos los datos a formato largo para facilitar la comparación por enfermedad
@@ -941,22 +950,25 @@ tramos de edad. Por el contrario, el insomnio y el TOC muestran colores
 más claros, lo que indica que sus puntuaciones medias de autoevaluación
 son considerablemente más bajas en la mayoría de los grupos.
 
-## - ¿Existe algún género musical que tenga efecto positivo en alguna de las enfermedades mentales?
-## - ¿Cuáles son los géneros más/menos escuchados entre la gente con depresión/ansiedad/ocd/insomnia?
-Estas preguntas pueden ser interesantes de investigar a la vez ya que en ambas
-vamos a explorar las variables frecuencias y nos pueden ayudar a no caer en deducciones 
-precipitadas.
+**- ¿Existe algún género musical que tenga efecto positivo en alguna de
+las enfermedades mentales? ¿Cuáles son los géneros más/menos escuchados
+entre la gente con depresión/ansiedad/ocd/insomnia?**
 
-Empezamos con la pregunta, ¿Existe algún género musical que tenga efecto positivo
-en alguna de las enfermedades mentales?
+Estas preguntas pueden ser interesantes de investigar a la vez ya que en
+ambas vamos a explorar las variables frecuencias y nos pueden ayudar a
+no caer en deducciones precipitadas.
+
+Empezamos con la pregunta, ¿Existe algún género musical que tenga efecto
+positivo en alguna de las enfermedades mentales?
 
 Para responder a esta pregunta vamos a tomar a las personas que
 indicaron en la encuesta que la música tiene efecto positivo.
 
-Para este análisis vamos a tomar una métrica en la que en las variables de frecuencia
-el salto entre cada escalón de la categoría es igual. En otras palabras, la 
-distancia entre "Never" y "Rarely" es la misma que entre "Frequently" y 
-"Very Frequently", siendo igual entre el resto de escalones. 
+Para este análisis vamos a tomar una métrica en la que en las variables
+de frecuencia el salto entre cada escalón de la categoría es igual. En
+otras palabras, la distancia entre "Never" y "Rarely" es la misma que
+entre "Frequently" y "Very Frequently", siendo igual entre el resto de
+escalones.
 
 ```{r}
 #Filtramos a las personas que indican que la música tiene un efecto positivo ("Improve")
@@ -992,17 +1004,18 @@ ggplot(efecto_positivo_generos, aes(x = reorder(genero, media_escucha), y = medi
 Al analizar si existe un género musical asociado a un efecto positivo en
 la salud mental, se observa de forma global que la gran mayoría de los
 encuestados que experimentan una mejoría (*Improve*) consumen
-habitualmente géneros como el Rock y el Pop. No obstante, esto puede guardar
-una estrecha relación con que son también los géneros más habituales de
-la muestra como género favorito.
+habitualmente géneros como el Rock y el Pop. No obstante, esto puede
+guardar una estrecha relación con que son también los géneros más
+habituales de la muestra como género favorito.
 
-Vamos ahora a analizar las frecuecias de géneros de música por problema de salud 
-mental, teniendo como objetivo las personas que tengan un índice bajo de autopercepción
-del transtorno correspondiente. 
+Vamos ahora a analizar las frecuecias de géneros de música por problema
+de salud mental, teniendo como objetivo las personas que tengan un
+índice bajo de autopercepción del transtorno correspondiente.
 
-¿Como fijamos que es alto o bajo para cada transtorno? Para ello vamos a tener en 
-cuenta en conjunto, la gravedad de la enfermedad y la media de los datos de 
-autopercepción.
+¿Como fijamos que es alto o bajo para cada transtorno? Para ello vamos a
+tener en cuenta en conjunto, la gravedad de la enfermedad y la media de
+los datos de autopercepción.
+
 ```{r}
 cat("Insomnio")
 table(datos_train_imp$insomnio, useNA = 'always')
@@ -1032,29 +1045,30 @@ mediana_ocd_train<- median(datos_train_imp$ocd, na.rm = TRUE)
 cat("La media es", media_ocd_train, "\n")
 cat("La mediana es",mediana_ocd_train, "\n")
 ```
-El insomnio tomaremos como valor medio el 4, siendo un 
-nivel "bajo" desde 3 para abajo y alto de 5 para arriba.
 
-La depresión como alto a partir de 5, a pesar deque la media salga 4,8. 
-Siendo el punto medio el 4 y bajo desde 3 hasta 0. 
+El insomnio tomaremos como valor medio el 4, siendo un nivel "bajo"
+desde 3 para abajo y alto de 5 para arriba.
 
-La ansiedad, tomaremos como alto de 6 en adelante, 5 como punto medio y bajo de 
-4 hasta 0.
+La depresión como alto a partir de 5, a pesar de que la media salga 4,8.
+Siendo el punto medio el 4 y bajo desde 3 hasta 0.
 
-El ocd, tomaremos como punto medio el 3, alto de 4 en adelante y bajo de 2 para 
-abajo.
+La ansiedad, tomaremos como alto de 6 en adelante, 5 como punto medio y
+bajo de 4 hasta 0.
 
-Estamos tomando estas referencias, como punto inicial y en caso de ver en posteriores
-fases del proyecto que hayan sido demasiado severas o restrictivas, podremos corregirnos.
-Por ahora serán nuestras referencias.
+El ocd, tomaremos como punto medio el 3, alto de 4 en adelante y bajo de
+2 para abajo.
 
-| Enfermedad | Bajo | Punto medio| Alto|
-| :--- | :---: | ---: | ---: |
-| Insomnio | 0-3| 4 | 5-10 |
-| Depresion | 0-3 | 4 | 5-10 |
-| Ansiedad | 0-4 |5 | 6-10 |
-|OCD| 0-2 | 3 | 4-10 |
+Estamos tomando estas referencias, como punto inicial y en caso de ver
+en posteriores fases del proyecto que hayan sido demasiado severas o
+restrictivas, podremos corregirnos. Por ahora serán nuestras
+referencias.
 
+| Enfermedad | Bajo | Punto medio | Alto |
+|:-----------|:----:|------------:|-----:|
+| Insomnio   | 0-3  |           4 | 5-10 |
+| Depresion  | 0-3  |           4 | 5-10 |
+| Ansiedad   | 0-4  |           5 | 6-10 |
+| OCD        | 0-2  |           3 | 4-10 |
 
 ```{r}
 ansiedad_baja_generos <- datos_train_imp %>%
@@ -1125,26 +1139,21 @@ insomnio_bajo_generos <- datos_train_imp %>%
 
 insomnio_bajo_generos
 ```
-Vemos con este análisis un pequeño patron, en el que las frecuencias de escucha
-más altas entre las personas que hemos considerado que están en un rango bajo de 
-los problemas de salud mental, son el género de pop y rock, a primera vista. 
 
-Aun así, quizá que esta media de frecuencias sea alta, se deba a que son géneros 
-más populares. 
-Por ello es momento de tratar la segunda pregunta.
+Vemos con este análisis un pequeño patron, en el que las frecuencias de
+escucha más altas entre las personas que hemos considerado que están en
+un rango bajo de los problemas de salud mental, son el género de pop y
+rock, a primera vista.
 
-¿Cuáles son los géneros más/menos escuchados entre la gente con depresión/ansiedad/ocd/insomnia?
+Aun así, quizá que esta media de frecuencias sea alta, se deba a que son
+géneros más populares. Por ello es momento de tratar la segunda
+pregunta.
 
-Recordemos:
-| Enfermedad | Bajo | Punto medio| Alto|
-| :--- | :---: | ---: | ---: |
-| Insomnio | 0-3| 4 | 5-10 |
-| Depresion | 0-3 | 4 | 5-10 |
-| Ansiedad | 0-4 |5 | 6-10 |
-|OCD| 0-2 | 3 | 4-10 |
+¿Cuáles son los géneros más/menos escuchados entre la gente con
+depresión/ansiedad/ocd/insomnia?
 
-Vamos a fijarnos ahora en las personas con un rango que consideramos alto en la 
-autopercepción de la enfermedad.
+Vamos a fijarnos ahora en las personas con un rango que consideramos
+alto en la autopercepción de la enfermedad.
 
 ```{r}
 #Función auxiliar para traducir las frecuencias de texto a valores numéricos (0 a 4), considerando la métrica 
@@ -1220,10 +1229,10 @@ estas personas siguen siendo el Rock y el Pop. Por el contrario, los
 géneros menos escuchados coinciden en los niveles más bajos de la
 escala, destacando el Gospel y el Latin.
 
-Por lo que por ahora, no podemos sacar una conclusión de que un género particular
-cause un efecto positivo de primera mano. En etapas posteriores con combinación de
-variables y técnicas como el clustering, podremos indagar más a fondo en estos 
-posibles beneficios. 
+Por lo que por ahora, no podemos sacar una conclusión de que un género
+particular cause un efecto positivo de primera mano. En etapas
+posteriores con combinación de variables y técnicas como el clustering,
+podremos indagar más a fondo en estos posibles beneficios.
 
 Una vez se tiene una exploración global de los datos, enfocaremos
 nuestro estudio en la predicción que buscamos analizar. Observamos que
@@ -1231,7 +1240,8 @@ pueden existir variables que no nos proporcionen información al *target*
 como sería la plataforma e incluso el género favorito u horas de
 escucha.
 
-## ¿Es relevante saber la plataforma con la que escuchan música de cara a nuestra variable respuesta?
+**¿Es relevante saber la plataforma con la que escuchan música de cara a
+nuestra variable respuesta?**
 
 ```{r}
 ggplot(datos_train_imp, aes(x = plataforma, fill = efectos)) +
@@ -1335,10 +1345,10 @@ nula.
 
 Habiendo visto estas pruebas, parece ser que la variable plataforma no
 aporta a la hora de ver si un paciente mejora o no en nuestro estudio.
-Por lo que quizá sea de nuestro interes eliminarla en la próxima etapa
+Por lo que quizá sea de nuestro interés eliminarla en la próxima etapa
 del proyecto.
 
-## ¿Que tan relevante es el género favorito por si solo?
+**¿Que tan relevante es el género favorito por si solo?**
 
 ```{r}
 #Porcentaje de efecto positivo por genero_fav
@@ -1359,15 +1369,14 @@ chisq.test(tabla_genfav)
 fisher.test(tabla_genfav, simulate.p.value = TRUE)
 ```
 
-Al realizar el test chi cuadrado, vemos que tenemos un valor de 37 con 26 grados
-de libertad lo que no es especialmente alto, por tanto la diferencia entre lo 
-observado y lo esperado aún puede deberse al azar. 
+Al realizar el test chi cuadrado, vemos que tenemos un valor de 37 con
+26 grados de libertad lo que no es especialmente alto, por tanto la
+diferencia entre lo observado y lo esperado aún puede deberse al azar.
 
-El p-valor tanto en la prueba chi-cuadrado como la de fisher, esta entre 0,07 y cerca de 0,08, 
-aunque con esto no podemos rechazar la hipótesis nula de que no existe asociación entre 
-el género musical favorito y el efecto observado, si que está en el límite de poder
-rechazarse. 
-
+El p-valor tanto en la prueba chi-cuadrado como la de fisher, esta entre
+0,07 y cerca de 0,08, aunque con esto no podemos rechazar la hipótesis
+nula de que no existe asociación entre el género musical favorito y el
+efecto observado, si que está en el límite de poder rechazarse.
 
 ```{r}
 efecto_genero_Ansiedad <- datos_train_imp %>%
@@ -1405,23 +1414,27 @@ efecto_genero_Ocd <- datos_train_imp %>%
   arrange(desc(Media_Ocd))
 efecto_genero_Ocd
 ```
-Al analizar estas tablas de medias por género favorito, no parece que podamos sacar
-muchas conclusiones respecto a géneros que nos generaban dudas en las preguntas anteriores
-como han sido el pop y el rock. Pero si que llama la atención que las personas cuyo 
-género favorito es la música clásica tenga en los cuatro casos una de las 5 menores
-medias entre los géneros, teniendo un número de personas significativo en la muestra train.
-Esto también pasa con el género R&B.
 
-Por lo que quizá la variable genero_fav, si tenga alguna relevancia en relación 
-a los índices de autopercepción de las enfermedades. 
+Al analizar estas tablas de medias por género favorito, no parece que
+podamos sacar muchas conclusiones respecto a géneros que nos generaban
+dudas en las preguntas anteriores como han sido el pop y el rock. Pero
+sí que llama la atención que las personas cuyo género favorito es la
+música clásica tengan en los cuatro casos una de las 5 menores medias
+entre los géneros, teniendo un número de personas significativo en la
+muestra train. Esto también pasa con el género R&B.
 
-Por tanto por ahora, teniendo en cuensta los test anteriores y estas tablas de medias,
-podemos decir que a pesar de que el p-valor en relación con la variable efecto, 
-no parece ser lo más significativa posible por estar al límite, no hemos podido concluir 
-que no esté relacionada. Y viendo que hay posibles patrones como el observado con 
-el género música clásica y los índices de autopercepción, diremos que la variable 
-si va a ser relevante. La medida en lo que esta variable lo sea, se verá en la
-siguiente etapa en donde empezaremos a reducir dimensiones y realizar clustering.
+Por lo que quizá la variable genero_fav, si tenga alguna relevancia en
+relación a los índices de autopercepción de las enfermedades.
+
+Por tanto por ahora, teniendo en cuenta los test anteriores y estas
+tablas de medias, podemos decir que a pesar de que el p-valor en
+relación con la variable efecto, no parece ser lo más significativa
+posible por estar al límite, no hemos podido concluir que no esté
+relacionada. Viendo que hay posibles patrones como el observado con el
+género música clásica y los índices de autopercepción, diremos que la
+variable síi va a ser relevante. La medida en lo que esta variable lo
+sea, se verá en la siguiente etapa en donde empezaremos a reducir
+dimensiones y realizar clustering.
 
 ## Principales hallazgos y conclusiones
 
@@ -1449,7 +1462,8 @@ relación con los objetivos planteados:
     posiciona con claridad como el género musical más habitual entre los
     participantes, seguido muy de cerca por el Pop. En el extremo
     opuesto, los géneros con menor representación y menores frecuencias
-    de escucha en la muestra son el Folk y Otros Géneros (géneros minoritarios).
+    de escucha en la muestra son el Folk y Otros Géneros (géneros
+    minoritarios).
 
 3.  **Percepción del efecto de la música y hábitos en perfiles**
     **clínicos:** Una gran mayoría de los participantes percibe que la
@@ -1464,37 +1478,46 @@ relación con los objetivos planteados:
 A la hora de interpretar los resultados anteriores, es necesario tener
 en cuenta las siguientes limitaciones:
 
-3.1.  **Correlación frente a casualidad:** al tratarse de un estudio
+1.  **Correlación frente a casualidad:** al tratarse de un estudio
     observacional los datos permiten identificar tendencias de consumo y
     correlaciones (como el hecho de que personas con ansiedad escuchen
     determinados géneros), pero no establecen relaciones de causalidad.
     No es posible concluir que un género musical específico cure, cause
     o reduzca directamente una patología mental.
-3.2.  **Sesgo de popularidad:** La predominancia del Rock y del Pop en los
+
+2.  **Sesgo de popularidad:** La predominancia del Rock y del Pop en los
     perfiles con ansiedad o depresión responde fundamentalmente a un
     efecto de popularidad (son los géneros más consumidos por toda la
     muestra en general), y no necesariamente a una propiedad terapéutica
     exclusiva de dichos géneros.
-3.3.  **Representatividad de la muestra:** Los datos provienen de una
+
+3.  **Representatividad de la muestra:** Los datos provienen de una
     muestra recopilada a través de redes sociales (como Discord o
     Reddit) de manera voluntaria. Por lo tanto, los resultados son
     representativos de los usuarios que respondieron al formulario, pero
     no son generalizables a la población general debido a la falta de
     equilibrio en los rangos de edad.
-3.4.  **Variables excluidas o en cuarentena:** variables planteadas
+
+4.  **Variables excluidas o en cuarentena:** variables planteadas
     inicialmente como los pulsos por minuto (BPM), mostraban un alto
     porcentaje de valores nulos y poca relevancia explicativa sobre la
     variable respuesta tras los test de importancia. Los BPM representan
     una métrica acústica y objetiva del ritmo. Al tener que excluir esta
     variable el estudio renuncia a analizar si la velocidad o el tempo
     de la música tiene un impacto real en las enfermedades.
-    
-4.  **Cuarentena de la variable bpm:** la variable bpm nos ha dado motivos
-    para dejarla aislada, pues nos ha generado desconfianza y no parecía ser
-    relevante con nuestra variable respuesta principal efecto.
-    
-5.  **Relevancia de otras variables:** mientras que hemos visto que claramente
-    y como era de esperar la plataforma no influye en nuestro target, con la 
-    varible genero_fav hemos aclarado nuestras dudas y visto que si puede tener
-    relevancia en nuestro estudio. 
-    
+
+5.  **Relevancia de otras variables:** mientras que hemos visto que
+    claramente y como era de esperar la plataforma no influye en nuestro
+    target, con la varible genero_fav hemos aclarado nuestras dudas y
+    visto que si puede tener relevancia en nuestro estudio.
+
+## Uso de Inteligencia Artificial
+
+Durante la realización de este trabajo hemos utilizado la inteligencia
+artificial principalmente como ayuda para programar el código en R,
+sobre todo a la hora de hacer gráficas, y para solucionar los errores
+que nos iban apareciendo al renderizarlo. También la hemos utilizado
+para consultar y resolver dudas sobre algunos aspectos relacionados con
+la música que no conocíamos. En cualquier caso, toda la información que
+nos ha proporcionado ha sido comprobada y contrastada con otras fuentes
+para asegurarnos de que fuera correcta.
