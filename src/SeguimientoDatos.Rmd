@@ -21,3 +21,5 @@ datos_train_imp <-- el anterior pero con datos imputados para los demás NA
 datosEdad <-- datos_train_imp con edades agrupadas por bloques
 
 datos_train_agrupplat <-- datos_train_imp pero agrupando las plataformas que no son spotify
+
+efecto_positivo_generos <-- datos_train_imp pero solo las personas que mejoraron 

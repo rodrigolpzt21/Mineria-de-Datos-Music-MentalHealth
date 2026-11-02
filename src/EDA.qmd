@@ -433,7 +433,7 @@ head(datos_preparticion)
 ### Partición de los datos
 
 Dada la cantidad de datos decidimos realizar una partición train
-(0.8·65)-test (0.8·0.35) -validación (0.2).
+(0.52)-test (0.28) -validación (0.2).
 
 ```{r}
 set.seed(154684)
@@ -446,7 +446,6 @@ Conjunto train-test (hay que volver a dividirlo)
 datos_tt <- datos_preparticion[idx_tt_val$Resample1,]
 dim(datos_tt)
 ```
-
 Volvemos a dividir train-test
 
 ```{r}
@@ -461,7 +460,6 @@ dim(datos_train)
 datos_test <- datos_tt[-idx_tt$Resample1,]
 dim(datos_test)
 ```
-
 Conjunto de validación que no usaremos más hasta el final.
 
 ```{r}
@@ -471,8 +469,7 @@ dim(datos_val)
 
 ### Continuamos con el EDA
 
-Ahora ya solo continuaremos con el conjunto de entrenamiento
-datos_train.
+Ahora ya solo continuaremos con el conjunto de entrenamiento datos_train.
 
 En la primera parte del análisis, vimos que la variable bpm nos generaba
 dudas de su utilidad, por sus valores y por la gran cantidad de datos
@@ -515,12 +512,12 @@ stripchart(datos_train$bpm,
            col = rgb(0, 0, 1, 0.3))
 ```
 
-####Información del "entendido/experto" Los valores típicos de bpm en la
-música oscilan habitualmente entre los 40 y los 220 bpm, pero podemos
-ver que tenemos 4 valores atípicos por debajo de 40 y 1 por encima de
-220, además de tener en la partición 50 NA. Claramente la media está
-siendo afectada por el valor atípico superior, pues es varias escalas
-por encima.
+####Información del "entendido/experto"
+Los valores típicos de bpm en la música oscilan habitualmente entre
+los 40 y los 220 bpm, pero podemos ver que tenemos 4 valores atípicos por debajo
+de 40 y 1 por encima de 220, además de tener en la partición 50 NA. 
+Claramente la media está siendo afectada por el valor atípico superior, pues 
+está varias escalas por encima.
 
 Vamos a transformar las entradas atípicas en NA por ahora, considerando
 que se han rellenado con desconocimiento, para poder analizar de forma
@@ -536,22 +533,16 @@ summary(datos_train$bpm)
 pct_na <- mean(is.na(datos_train$bpm)) * 100
 cat("Porcentaje de NAs:", round(pct_na, 2), "%\n")
 
-
-#boxplot previo a limpieza de anomalias
-ggplot(subset(datos_train_bpm, !is.na(bpm)), aes(y = bpm)) +
-  geom_boxplot(fill = "lightgreen", alpha = 0.7) +
-  scale_y_continuous(limits = c(0, 230), breaks = seq(0, 220, by = 20)) +
-  labs(title = "Boxplot de BPM (Escala 0 - 220)", y = "BPM") +
-  theme_minimal()
 #boxplot post limpieza de anomalias
 ggplot(subset(datos_train, !is.na(bpm)), aes(y = bpm)) +
-  geom_boxplot(fill = "green", alpha = 0.7) +
-  scale_y_continuous(limits = c(0, 230), breaks = seq(0, 220, by = 20)) +
+  geom_boxplot( alpha = 0.7) +
+  scale_y_continuous(limits = c(0, 230), breaks = seq(0, 230, by = 20)) +
   labs(title = "Boxplot de BPM limpio de valores anómalos (Escala 0 - 230)", y = "BPM") +
   theme_minimal()
 ```
+Vemos que el boxplot se concentra entre 100 y 150, con un valor más límite en 120.
 
-Nos sale un porcentaje que puede ser bastante significativo, vamos a
+Por otro lado, nos sale un porcentaje que puede ser bastante significativo, vamos a
 profundizar el análisis. Para ello vamos a ver un boxplot con efectos,
 hacer un anova y utilizar métodos que nos digan la ganancia de
 información que aporta la variable.
@@ -559,12 +550,9 @@ información que aporta la variable.
 ```{r}
 #Comparar la distribución de BPM con la variable respuesta efecto
 boxplot(bpm ~ efectos, data = datos_train, 
-        main = "BPM vs efectos", 
-        col = c("lightblue", "orange"))
-# modelo ANOVA
+        main = "BPM vs efectos")
+#modelo ANOVA
 modelo_anova <- aov(bpm ~ efectos, data = datos_train)
-
-# Ver el resumen con el p-valor
 summary(modelo_anova)
 
 information_gain(efectos ~ bpm, data = datos_train)
@@ -573,7 +561,7 @@ information_gain(efectos ~ bpm, data = datos_train)
 **Resultado boxplot:** Vemos que tienen medianas similares, entorno a
 120 ,en los tres outputs de la variable respuesta, sumado a que parecen
 tener distribuciones similares, es el primer indicio de que no aporta
-mucho esta variable.
+mucho esta variable. 
 
 **Anova y test de aporte:** al realizar un anova, nos da un p-valor muy
 alto de 0,87, por lo que no hay evidencia suficiente para rechazar la
@@ -582,10 +570,13 @@ medias de los grupos. Además, el test de importancia nos dice que a lo
 sumo aporta un 0,56% de la información en la variable respuesta. Lo que
 es despreciable.
 
+**Test de ganancia de informacion: ** este test nos da 0, por lo que la variable
+no parece aportar nada de inforación para la variable respuesta. 
+
 Por todos estos resultados junto con la gran cantidad de datos faltantes
 de esta variable, podemos concluir que esta variable parece no
 aportarnos mucho, por ello la dejaremos en **cuarentena**. Y
-posteriormente iremos comparando si nos aporta.
+posteriormente iremos comparando si nos aporta, por si acaso.
 
 ```{r}
 #"Eliminamos/dejamos en cuarentena bpm"
@@ -603,7 +594,7 @@ conjuntos de validación y test.
 #Receta de imputación
 #Excluimos la variable objetivo
 predictores <- setdiff(names(datos_train_sinbpm), "efectos")
-# Crear receta
+#Crear receta
 receta <- recipe(~ ., data = datos_train_sinbpm[, predictores, drop = FALSE]) |>
   step_impute_bag(extranjero,instrumentista,trabajando,plataforma, # variables a imputar
                   trees = 25,seed_val = 123)
@@ -630,7 +621,6 @@ datos_train_imp <- imputar_datos(datos_train_sinbpm, receta_recuperada, predicto
 head(datos_train_imp)
 vis_miss(datos_train_sinbpm)
 vis_miss(datos_train_imp)
-#creo que debemos eliminar las entradas con la variable y, eliminada
 ```
 
 Ahora veamos un resumen global de los datos imputados.
@@ -662,7 +652,6 @@ print(matriz_cor)
 corrplot(matriz_cor, method = "color", type = "upper", 
          tl.col = "black", tl.srt = 45, addCoef.col = "black")
 ```
-
 La correlación que más llama la atención es la de ansiedad y depresión
 que es la más alta entre todas aunque no deja de ser solo de 0,51.
 
@@ -684,12 +673,12 @@ ggplot(datos_train_imp, aes(x = efectos, y = horas_pd)) +
 Vemos que entre improve y no effect tenemos un boxplot bastante similar
 con medianas similares. Por otro lado los que empeoran parecen escuchar
 algo menos de música, aunque habría que profundizar, antes de sacar
-conclusiones.
+conclusiones, pues la diferencia es bastante pequeña.
 
 Por otro lado podremos comenzar a estudiar algunas de las preguntas
 hechas al comienzo del trabajo.
 
-## - ¿Qué género de música es el más habitual? ¿Y el que menos?
+## - ¿Qué género de música es el más habitual entre los géneros favoritos? ¿Y el que menos?
 
 ```{r}
 conteo_generos <- datos_train_imp %>%
@@ -703,16 +692,15 @@ genero_menos_habitual <- conteo_generos %>% slice(n())
 cat("El género más habitual es:", genero_mas_habitual$genero_fav, "con", genero_mas_habitual$n, "personas.\n")
 cat("El género menos habitual es:", genero_menos_habitual$genero_fav, "con", genero_menos_habitual$n, "personas.\n")
 ```
-
 Podemos apreciar que el rock es el género que más se repite como el
 favorito de la gente y el menos habitual sin embargo son géneros
-minoritarios representados por la categoría otros géneros y el folk.
+minoritarios representados por la categoría otros géneros.
 
 Para visualizar mejor los datos de género favorito vamos a realizar un
 gráfico de barras horizontal.
 
 ```{r}
-ggplot(datos_train_imp %>% filter(!is.na(genero_fav)), aes(x = reorder(genero_fav, genero_fav, function(x) length(x)), fill = genero_fav)) +
+ggplot(datos_train_imp %>% filter(!is.na(genero_fav)), aes(x = reorder(genero_fav, genero_fav, function(x) length(x)))) +
   geom_bar(show.legend = FALSE) +
   coord_flip() + # Pone las barras en horizontal para leer mejor los nombres
   labs(
@@ -723,6 +711,8 @@ ggplot(datos_train_imp %>% filter(!is.na(genero_fav)), aes(x = reorder(genero_fa
   ) +
   theme_minimal()
 ```
+Gracias al gráfico vemos que el folk también está empatado con otros géneros, como
+género menos elegido como favorito. 
 
 A partir del análisis de los datos de la encuesta, al observar la
 variable de género musical favorito, se aprecia claramente que el género
@@ -953,6 +943,11 @@ son considerablemente más bajas en la mayoría de los grupos.
 Para responder a esta pregunta vamos a tomar a las personas que
 indicaron en la encuesta que la música tiene efecto positivo.
 
+Para este análisis vamos a tomar una métrica en la que en las variables de frecuencia
+el salto entre cada escalón de la categoría es igual. En otras palabras, la 
+distancia entre "Never" y "Rarely" es la misma que entre "Frequently" y 
+"Very Frequently", siendo igual entre el resto de escalones. 
+
 ```{r}
 #Filtramos a las personas que indican que la música tiene un efecto positivo ("Improve")
 # y calcular la media de escucha de cada género en ese grupo
@@ -973,7 +968,7 @@ efecto_positivo_generos <- datos_train_imp %>%
 
 efecto_positivo_generos
 
-ggplot(efecto_positivo_generos, aes(x = reorder(genero, media_escucha), y = media_escucha, fill = genero)) +
+ggplot(efecto_positivo_generos, aes(x = reorder(genero, media_escucha), y = media_escucha)) +
   geom_col(show.legend = FALSE) +
   coord_flip() +
   labs(
@@ -987,18 +982,73 @@ ggplot(efecto_positivo_generos, aes(x = reorder(genero, media_escucha), y = medi
 Al analizar si existe un género musical asociado a un efecto positivo en
 la salud mental, se observa de forma global que la gran mayoría de los
 encuestados que experimentan una mejoría (*Improve*) consumen
-habitualmente géneros como el Rock y el Pop. No obstante, esto guarda
+habitualmente géneros como el Rock y el Pop. No obstante, esto puede guardar
 una estrecha relación con que son también los géneros más habituales de
-la muestra.
+la muestra como género favorito.
 
-Al filtrar por patologías específicas como la ansiedad o la depresión,
-se denota que los encuestados recurren a sus géneros preferidos
-habituales, destacando el Rock, el Pop y el Metal en los niveles más
-altos de escucha.
+Vamos ahora a analizar las frecuecias de géneros de música por problema de salud 
+mental, teniendo como objetivo las personas que tengan un índice bajo de autopercepción
+del transtorno correspondiente. 
+
+¿Como fijamos que es alto o bajo para cada transtorno? Para ello vamos a tener en 
+cuenta en conjunto, la gravedad de la enfermedad y la media de los datos de 
+autopercepción.
+```{r}
+cat("Insomnio")
+table(datos_train_imp$insomnio, useNA = 'always')
+media_insomnio_train <- mean(datos_train_imp$insomnio, na.rm = TRUE)
+mediana_insomnio_train<- median(datos_train_imp$insomnio, na.rm = TRUE)
+cat("La media es", media_insomnio_train, "\n")
+cat("La mediana es",mediana_insomnio_train, "\n")
+
+cat("depresion")
+table(datos_train_imp$depresion, useNA = 'always')
+media_depresion_train <- mean(datos_train_imp$depresion, na.rm = TRUE)
+mediana_depresion_train<- median(datos_train_imp$depresion, na.rm = TRUE)
+cat("La media es", media_depresion_train, "\n")
+cat("La mediana es",mediana_depresion_train, "\n")
+
+cat("ansiedad")
+table(datos_train_imp$ansiedad, useNA = 'always')
+media_ansiedad_train <- mean(datos_train_imp$ansiedad, na.rm = TRUE)
+mediana_ansiedad_train<- median(datos_train_imp$ansiedad, na.rm = TRUE)
+cat("La media es", media_ansiedad_train, "\n")
+cat("La mediana es",mediana_ansiedad_train, "\n")
+
+cat("ocd")
+table(datos_train_imp$ocd, useNA = 'always')
+media_ocd_train <- mean(datos_train_imp$ocd, na.rm = TRUE)
+mediana_ocd_train<- median(datos_train_imp$ocd, na.rm = TRUE)
+cat("La media es", media_ocd_train, "\n")
+cat("La mediana es",mediana_ocd_train, "\n")
+```
+El insomnio tomaremos como valor medio el 4, siendo un 
+nivel "bajo" desde 3 para abajo y alto de 5 para arriba.
+
+La depresión como alto a partir de 5, a pesar deque la media salga 4,8. 
+Siendo el punto medio el 4 y bajo desde 3 hasta 0. 
+
+La ansiedad, tomaremos como alto de 6 en adelante, 5 como punto medio y bajo de 
+4 hasta 0.
+
+El ocd, tomaremos como punto medio el 3, alto de 4 en adelante y bajo de 2 para 
+abajo.
+
+Estamos tomando estas referencias, como punto inicial y en caso de ver en posteriores
+fases del proyecto que hayan sido demasiado severas o restrictivas, podremos corregirnos.
+Por ahora serán nuestras referencias.
+
+| Enfermedad | Bajo | Punto medio| Alto|
+| :--- | :---: | ---: | ---: |
+| Insomnio | 0-3| 4 | 5-10 |
+| Depresion | 0-3 | 4 | 5-10 |
+| Ansiedad | 0-4 |5 | 6-10 |
+|OCD| 0-2 | 3 | 4-10 |
+
 
 ```{r}
 ansiedad_baja_generos <- datos_train_imp %>%
-  filter(ansiedad <= 1) %>%
+  filter(ansiedad <= 4) %>%
   select(starts_with("f_")) %>%
   mutate(across(everything(), ~ case_when(
     .x == "Never" ~ 0,
@@ -1014,8 +1064,8 @@ ansiedad_baja_generos <- datos_train_imp %>%
 
 ansiedad_baja_generos
 
-depresion_baja_generos <- datos %>%
-  filter(depresion <= 1) %>%
+depresion_baja_generos <- datos_train_imp %>%
+  filter(depresion <= 3) %>%
   select(starts_with("f_")) %>%
   mutate(across(everything(), ~ case_when(
     .x == "Never" ~ 0,
@@ -1031,8 +1081,8 @@ depresion_baja_generos <- datos %>%
 
 depresion_baja_generos
 
-ocd_bajo_generos <- datos %>%
-  filter(ocd <= 1) %>%
+ocd_bajo_generos <- datos_train_imp %>%
+  filter(ocd <= 2) %>%
   select(starts_with("f_")) %>%
   mutate(across(everything(), ~ case_when(
     .x == "Never" ~ 0,
@@ -1048,8 +1098,8 @@ ocd_bajo_generos <- datos %>%
 
 ocd_bajo_generos
 
-insomnio_bajo_generos <- datos %>%
-  filter(insomnio <= 1) %>%
+insomnio_bajo_generos <- datos_train_imp %>%
+  filter(insomnio <= 3) %>%
   select(starts_with("f_")) %>%
   mutate(across(everything(), ~ case_when(
     .x == "Never" ~ 0,
@@ -1065,104 +1115,24 @@ insomnio_bajo_generos <- datos %>%
 
 insomnio_bajo_generos
 ```
+Vemos con este análisis un pequeño patron, en el que las frecuencias de escucha
+más altas entre las personas que hemos considerado que están en un rango bajo de 
+los problemas de salud mental, son el género de pop y rock, a primera vista. 
 
 ## - ¿Cuáles son los géneros más/menos escuchados entre la gente con depresión/ansiedad/ocd/insomnia?
-
-Veamos ahora diagramas de cajas para comparar datos de generos favoritos
-con la autopercepción de los problemas mentales.
-
-```{r}
-#Diagrama de cajas 
-ggplot(datos_train_imp, aes(x = genero_fav, y = depresion, fill = genero_fav)) +
-  geom_boxplot() +
-  labs(title = "Diagrama de Cajas de depresion según genero_fav",
-       x = "Genero_fav",
-       y = "depresion") +
-  theme_minimal() +
-  theme(legend.position = "none")
-
-#Diagrama de cajas 
-ggplot(datos_train_imp, aes(x = genero_fav, y = ansiedad, fill = genero_fav)) +
-  geom_boxplot() +
-  labs(title = "Diagrama de Cajas de ansiedad según genero_fav",
-       x = "Genero_fav",
-       y = "ansiedad") +
-  theme_minimal() +
-  theme(legend.position = "none")
-#Diagrama de cajas 
-ggplot(datos_train_imp, aes(x = genero_fav, y = ocd, fill = genero_fav)) +
-  geom_boxplot() +
-  labs(title = "Diagrama de Cajas de ocd según genero_fav",
-       x = "Genero_fav",
-       y = "ocd") +
-  theme_minimal() +
-  theme(legend.position = "none")
-#Diagrama de cajas 
-ggplot(datos_train_imp, aes(x = genero_fav, y = insomnio, fill = genero_fav)) +
-  geom_boxplot() +
-  labs(title = "Diagrama de Cajas de insomnio según genero_fav",
-       x = "Genero_fav",
-       y = "insomnio") +
-  theme_minimal() +
-  theme(legend.position = "none")
-
-```
+Recordemos:
+| Enfermedad | Bajo | Punto medio| Alto|
+| :--- | :---: | ---: | ---: |
+| Insomnio | 0-3| 4 | 5-10 |
+| Depresion | 0-3 | 4 | 5-10 |
+| Ansiedad | 0-4 |5 | 6-10 |
+|OCD| 0-2 | 3 | 4-10 |
+Vamos a fijarnos ahora en las personas con un rango que consideramos alto en la 
+autopercepción de la enfermedad.
 
 ```{r}
-#Porcentaje de efecto positivo por genero_fav
-efecto_por_genero <- datos_train_imp %>%
-  group_by(genero_fav) %>%
-  summarise(
-    total = n(),
-    mejora = sum(efectos == "Improve", na.rm = TRUE),
-    pct_mejora = round((mejora / total) * 100, 2)
-  ) %>%
-  arrange(desc(pct_mejora))
-
-print(efecto_por_genero)
-
-#Prueba estadística de Chi-cuadrado para ver si la relación es significativa
-tabla_contingencia <- table(datos_train_imp$genero_fav, datos_train_imp$efectos)
-chisq.test(tabla_contingencia)
-```
-
-(Preguntar a carmen po el p-valor que es cerca de 0,05 pero no menor)
-
-```{r}
-#Función para obtener género más y menos escuchado según trastorno
-generos_por_enfermedad <- function(df, variable_trastorno, umbral = 5) {
-  df %>%
-  mutate(genero_fav = as.character(genero_fav)) %>%
-    filter(.data[[variable_trastorno]] >= umbral) %>%
-    count(genero_fav, name = "cantidad") %>%
-    arrange(desc(cantidad))
-}
-
-# Géneros para personas con Depresión
-depresion_gen <- generos_por_enfermedad(datos_train_imp, "depresion")
-cat("--- DEPRESIÓN ---\nMás escuchado:", head(depresion_gen$genero_fav, 1), 
-    "\nMenos escuchado:", tail(depresion_gen$genero_fav, 1), "\n\n")
-
-# Géneros para personas con Ansiedad
-ansiedad_gen <- generos_por_enfermedad(datos_train_imp, "ansiedad")
-cat("--- ANSIEDAD ---\nMás escuchado:", head(ansiedad_gen$genero_fav, 1), 
-    "\nMenos escuchado:", tail(ansiedad_gen$genero_fav, 1), "\n\n")
-
-# Géneros para personas con TOC (OCD)
-ocd_gen <- generos_por_enfermedad(datos_train_imp, "ocd")
-cat("--- OCD ---\nMás escuchado:", head(ocd_gen$genero_fav, 1), 
-    "\nMenos escuchado:", tail(ocd_gen$genero_fav, 1), "\n\n")
-
-# Géneros para personas con Insomnio
-insomnio_gen <- generos_por_enfermedad(datos_train_imp, "insomnio")
-cat("--- INSOMNIO ---\nMás escuchado:", head(insomnio_gen$genero_fav, 1), 
-    "\nMenos escuchado:", tail(insomnio_gen$genero_fav, 1), "\n\n")
-```
-
-## - ¿Cuáles son los géneros más/menos escuchados entre la gente con depresión/ansiedad/ocd/insomnia?
-
-```{r}
-# Función auxiliar para traducir las frecuencias de texto a valores numéricos (0 a 4)
+#Función auxiliar para traducir las frecuencias de texto a valores numéricos (0 a 4), considerando la métrica 
+#de un escalonado uniforme entre niveles.
 convertir_freq <- function(x) {
   case_when(
     x == "Never" ~ 0,
@@ -1174,9 +1144,9 @@ convertir_freq <- function(x) {
   )
 }
 
-# --- 1. PERSONAS CON ANSIEDAD ALTA---
+# --- PERSONAS CON ANSIEDAD ALTA---
 ranking_ansiedad <- datos_train_imp %>%
-  filter(ansiedad >= 3) %>%
+  filter(ansiedad >= 6) %>%
   select(starts_with("f_")) %>%
   mutate(across(everything(), convertir_freq)) %>%
   summarise(across(everything(), ~ mean(.x, na.rm = TRUE))) %>%
@@ -1187,9 +1157,9 @@ print("Ranking en Ansiedad Alta:")
 print(ranking_ansiedad)
 
 
-# --- 2. PERSONAS CON DEPRESIÓN ALTA (ej. puntuación > 5) ---
+# --- PERSONAS CON DEPRESIÓN ALTA ---
 ranking_depresion <- datos_train_imp %>%
-  filter(depresion >= 3) %>%
+  filter(depresion >= 5) %>%
   select(starts_with("f_")) %>%
   mutate(across(everything(), convertir_freq)) %>%
   summarise(across(everything(), ~ mean(.x, na.rm = TRUE))) %>%
@@ -1200,9 +1170,9 @@ print("Ranking en Depresión Alta:")
 print(ranking_depresion)
 
 
-# --- 3. PERSONAS CON INSOMNIO ALTO (ej. puntuación > 4) ---
+# --- PERSONAS CON INSOMNIO ALTO  ---
 ranking_insomnio <- datos_train_imp %>%
-  filter(insomnio >=3) %>%
+  filter(insomnio >=5) %>%
   select(starts_with("f_")) %>%
   mutate(across(everything(), convertir_freq)) %>%
   summarise(across(everything(), ~ mean(.x, na.rm = TRUE))) %>%
@@ -1213,9 +1183,9 @@ print("Ranking en Insomnio Alto:")
 print(ranking_insomnio)
 
 
-# --- 4. PERSONAS CON OCD ALTO (ej. puntuación > 3) ---
+# ---PERSONAS CON OCD ALTO ---
 ranking_ocd <- datos_train_imp %>%
-  filter(ocd >= 3) %>%
+  filter(ocd >= 4) %>%
   select(starts_with("f_")) %>%
   mutate(across(everything(), convertir_freq)) %>%
   summarise(across(everything(), ~ mean(.x, na.rm = TRUE))) %>%
@@ -1348,6 +1318,24 @@ Por lo que quizá sea de nuestro interes eliminarla en la próxima etapa
 del proyecto.
 
 ## ¿Es relevante el género favorito por si solo?
+```{r}
+#Porcentaje de efecto positivo por genero_fav
+efecto_por_genero <- datos_train_imp %>%
+  group_by(genero_fav) %>%
+  summarise(
+    total = n(),
+    mejora = sum(efectos == "Improve", na.rm = TRUE),
+    pct_mejora = round((mejora / total) * 100, 2)
+  ) %>%
+  arrange(desc(pct_mejora))
+
+print(efecto_por_genero)
+
+#Prueba estadística de Chi-cuadrado para ver si la relación es significativa
+tabla_contingencia <- table(datos_train_imp$genero_fav, datos_train_imp$efectos)
+chisq.test(tabla_contingencia)
+```
+
 
 ```{r}
 # Calcular los niveles medios de ansiedad y depresión según el género musical favorito
