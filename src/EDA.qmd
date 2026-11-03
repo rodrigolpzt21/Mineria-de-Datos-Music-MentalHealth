@@ -20,6 +20,7 @@ edito: visual
 editor: 
   markdown: 
     wrap: 72
+warning: false
 ---
 
 ## Introducción
