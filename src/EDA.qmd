@@ -13,6 +13,7 @@ format:
     toc-depth: 3
     code-fold: true
     code-copy: true
+    code-tools: true
     embed-resources: true
     number-sections: true
 edito: visual
