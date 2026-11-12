@@ -120,6 +120,7 @@ library(visdat) #para datos faltantes
 library(naniar) ## gg_mis_var
 library(FSelectorRcpp)
 library(recipes) #arbol de imputación con guardado
+library(gridExtra)#para realizar pca
 datos <- read.csv("../data/musicData.csv",na.strings = c("", " ", "NA", "NaN"))
 ```
 
@@ -1639,3 +1640,152 @@ para consultar y resolver dudas sobre algunos aspectos relacionados con
 la música que no conocíamos. En cualquier caso, toda la información que
 nos ha proporcionado ha sido comprobada y contrastada con otras fuentes
 para asegurarnos de que fuera correcta.
+
+## Componentes principales (PCA)
+
+```{r}
+
+# Seleccionamos las variables numéricas
+datos_pca <- datos_train_imp %>%
+  select(
+    edad,
+    horas_pd,
+    ansiedad,
+    depresion,
+    insomnio,
+    ocd
+  )#Dejamos fuera bpm hasta corregirla
+
+
+# Comprobamos la desviación típica de cada variable
+sapply(datos_pca, sd)
+
+# Realizamos el PCA
+pca <- prcomp(datos_pca,
+              center = TRUE,
+              scale. = TRUE)
+fviz_eig(pca,
+         addlabels = TRUE,
+         barfill = "steelblue",
+         barcolor = "steelblue",
+         linecolor = "darkred",
+         ncp = 6) +
+  labs(
+    title = "Análisis de Componentes Principales",
+    subtitle = "Porcentaje de varianza explicada por componente",
+    x = "Componentes principales",
+    y = "Porcentaje de varianza explicada (%)"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(
+      size = 16, face = "bold", hjust = 0.5
+    ),
+    plot.subtitle = element_text(
+      size = 11, hjust = 0.5, color = "gray40"
+    ),
+    axis.title = element_text(size = 12, face = "bold"),
+    axis.text = element_text(size = 10),
+    panel.grid.minor = element_blank()
+  )
+summary(pca)
+
+# Calculamos la proporción de varianza explicada
+varianza <- pca$sdev^2 / sum(pca$sdev^2)
+
+# Porcentaje de varianza explicada
+varianza * 100
+
+# Porcentaje acumulado
+cumsum(varianza) * 100
+
+
+```
+Todas las desviaciones tipicas son distintas de cero por lo que aportan variabilidad y podremos incluirlas en el PCA.
+Al estar en diferentes unidades de medida por eso se pone scale=True
+La primera componente PC1 explica por si sola 35.88%
+LUtilizando las dos primeras componente explican conjuntamente 53.48%(PC2=17.6%)
+Utilizando las tres primeras 68.96%(PC3=15.48%)
+Utilizando las cuatro primeras 81.8088%(PC4=12.84%)
+Utilizando las cinco 92.76%(PC5=10.96%)
+Por tanto, si represento con dos dimensiones los datos, estaremos mostrando aprox 53.48% de la info total
+
+
+```{r}
+#Transformación ortonormal de PCA
+
+# Semilla para reproducibilidad
+set.seed(42)
+
+# Datos correlacionados
+n <- 100
+x1 <- rnorm(n, mean = 0, sd = 2)
+x2 <- 0.8 * x1 + rnorm(n, mean = 0, sd = 1)
+data <- data.frame(x1, x2)
+
+# PCA
+pca <- prcomp(data, center = TRUE, scale. = TRUE)
+
+# Guardar nuevas varialbes
+data_pca <- as.data.frame(pca$x)
+colnames(data_pca) <- c("PC1", "PC2")
+
+# Gráfico datos originales
+p1 <- ggplot(data, aes(x1, x2)) +
+  geom_point(color = "blue", alpha = 0.6) +
+  geom_vline(xintercept = 0, linetype = "dashed") +
+  geom_hline(yintercept = 0, linetype = "dashed") +
+  coord_fixed() +
+  ggtitle("Datos originales")
+
+# Gráfico componentes
+p2 <- ggplot(data_pca, aes(PC1, PC2)) +
+  geom_point(color = "red", alpha = 0.6) +
+  geom_vline(xintercept = 0, linetype = "dashed") +
+  geom_hline(yintercept = 0, linetype = "dashed") +
+  coord_fixed(ratio=1.5) +
+  ggtitle("Datos transformados (PCA)")
+
+grid.arrange(p1, p2, ncol = 2)
+```
+
+
+```{r}
+# Librerias
+library(FactoMineR)
+library(factoextra)
+library(ggplot2)
+library(gridExtra)
+
+# 1. Preparar los datos
+# Excluimos la variable respuesta efectos
+datos_reduccion <- datos_train_imp %>%
+  select(-efectos)
+
+# 2. Comprobar los tipos de variables
+str(datos_reduccion)
+
+# 3. Aplicar FAMD
+famd <- FAMD(datos_reduccion, graph = FALSE)
+
+# 4. Obtener las nuevas variables
+datos_famd <- as.data.frame(famd$ind$coord)
+
+# 5. Representar los individuos
+p1 <- fviz_famd_ind(famd,
+                    geom = "point",
+                    alpha.ind = 0.6) +
+  ggtitle("Datos transformados (FAMD)")
+
+# 6. Representar las variables
+p2 <- fviz_famd_var(famd,
+                    repel = TRUE) +
+  ggtitle("Variables (FAMD)")
+
+# 7. Mostrar los gráficos
+grid.arrange(p1, p2, ncol = 2)
+
+# 8. Varianza explicada
+famd$eig
+
+```
