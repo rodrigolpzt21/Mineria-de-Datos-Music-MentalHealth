@@ -1641,6 +1641,8 @@ la música que no conocíamos. En cualquier caso, toda la información que
 nos ha proporcionado ha sido comprobada y contrastada con otras fuentes
 para asegurarnos de que fuera correcta.
 
+#Practica 2
+
 ## Componentes principales (PCA)
 
 ```{r}
