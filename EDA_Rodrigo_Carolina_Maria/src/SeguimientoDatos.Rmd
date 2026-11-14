@@ -23,3 +23,5 @@ datosEdad <-- datos_train_imp con edades agrupadas por bloques
 datos_train_agrupplat <-- datos_train_imp pero agrupando las plataformas que no son spotify
 
 efecto_positivo_generos <-- datos_train_imp pero solo las personas que mejoraron 
+
+datos_pca <-- datos_train_imp en el que las variables categóricas las pasamos a numéricas

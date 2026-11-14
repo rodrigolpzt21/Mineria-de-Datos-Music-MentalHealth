@@ -121,6 +121,7 @@ library(naniar) ## gg_mis_var
 library(FSelectorRcpp)
 library(recipes) #arbol de imputación con guardado
 library(gridExtra)#para realizar pca
+library(factoextra)
 datos <- read.csv("../data/musicData.csv",na.strings = c("", " ", "NA", "NaN"))
 ```
 
@@ -1064,9 +1065,9 @@ tramos de edad. Por el contrario, el insomnio y el TOC muestran colores
 más claros, lo que indica que sus puntuaciones medias de autoevaluación
 son considerablemente más bajas en la mayoría de los grupos.
 
-**- ¿Existe algún género musical que tenga efecto positivo en alguna de
-las enfermedades mentales? ¿Cuáles son los géneros más/menos escuchados
-entre la gente con depresión/ansiedad/ocd/insomnia?**
+\*\* -¿Existe algún género musical que tenga efecto positivo en alguna
+de las enfermedades mentales? ¿Cuáles son los géneros más/menos
+escuchados entre la gente con depresión/ansiedad/ocd/insomnia?\*\*
 
 Estas preguntas pueden ser interesantes de investigar a la vez ya que en
 ambas vamos a explorar las variables frecuencias y nos pueden ayudar a
@@ -1645,51 +1646,81 @@ para asegurarnos de que fuera correcta.
 
 ## Componentes principales (PCA)
 
+Al estar tratando las componentes principales sabemos que tendremos que
+modificar las variables categóricas en numéricas. A continucación
+explicaremos como se han generalterado cada variable.
+**genero_fav, plataforma:** hemos generado variables dummy, es decir, variables numéricas que sirven para representar las categóricas. En este caso utilizamos la secuencia 0 y 1, en el caso de genero favorito se generarán nuevas variables (columnas) que representen cada género de música y en cada fila aparecerá 1 ó 0 dependiendo de si en el género favorito de ese encuestante o no respectivamente. Por oto lado, el caso de plataforma es análogo solo que 1 representa si escucha en esa plataforma y 0 si no.
+
+**trabajando,instrumentisra,musico,explorador,extranjero:** en el caso de estas cinco variables, tenemos un claro ejemplo de binariedad ya que se clasifican en "yes" y "no", que se representarán con 1 y 0 respectivamente.
+
+**Variables frecuencia:** en las distintas variables de frecuencia de escucha aparecen cuatro categorías según el ritmo en en cada encuestado ha escuchado música. En este caso, se utilizarán los valores numéricos 1 para "never", 2 para "rarely", 3 para "sometimes" y 4 para "always".
+```{r}
+# Modificamos la variable genero_fav
+generos <- as.data.frame(
+  model.matrix(~ genero_fav - 1, data = datos_train_imp)
+)
+names(generos) <- sub("genero_fav", "genero_", names(generos))
+
+# Eliminamos la variable original y añadimos las nuevas
+datos_pca <- cbind(
+  datos_train_imp %>% select(-genero_fav),
+  generos
+)
+
+# Modificamos la variable plataforma
+plataformas <- as.data.frame(
+  model.matrix(~ plataforma - 1, data = datos_pca)
+)
+names(plataformas) <- sub("plataforma","plataforma_",names(plataformas))
+# Eliminamos la variable original y añadimos las nuevas
+datos_pca <- datos_pca %>%
+  select(-plataforma) %>%
+  bind_cols(plataformas)
+
+#Modificamos a variables binarias trabajando,instrumentisra,musico,explorador,extranjero
+datos_pca <- datos_pca %>%
+  mutate(across(
+    c(trabajando, instrumentista, musico, explorador, extranjero),
+    ~ case_when(
+      tolower(as.character(.x)) == "yes" ~ 1,
+      tolower(as.character(.x)) == "no" ~ 0,
+      TRUE ~ NA_real_
+    )
+  ))
+
+#Modificamos a variable numerica las variables frecuencia
+datos_pca <- datos_pca %>%
+  mutate(across(
+    starts_with("f_"),
+    ~ case_when(
+      tolower(as.character(.x)) == "never" ~ 1,
+      tolower(as.character(.x)) == "rarely" ~ 2,
+      tolower(as.character(.x)) == "sometimes" ~ 3,
+      tolower(as.character(.x)) == "very frequently" ~ 4,
+      TRUE ~ NA_real_
+    )
+  ))
+
+# Comprobar el tipo de cada variable
+sapply(datos_pca, class)
+
+```
+
 ```{r}
 
-# Seleccionamos las variables numéricas
-datos_pca <- datos_train_imp %>%
-  select(
-    edad,
-    horas_pd,
-    ansiedad,
-    depresion,
-    insomnio,
-    ocd
-  )#Dejamos fuera bpm hasta corregirla
+datos_pca_final <- datos_pca %>%
+  select(-efectos)
 
+pca <- prcomp(
+  datos_pca_final,
+  center = TRUE,
+  scale. = TRUE
+)
 
-# Comprobamos la desviación típica de cada variable
-sapply(datos_pca, sd)
-
-# Realizamos el PCA
-pca <- prcomp(datos_pca,
-              center = TRUE,
-              scale. = TRUE)
 fviz_eig(pca,
          addlabels = TRUE,
-         barfill = "steelblue",
-         barcolor = "steelblue",
-         linecolor = "darkred",
-         ncp = 6) +
-  labs(
-    title = "Análisis de Componentes Principales",
-    subtitle = "Porcentaje de varianza explicada por componente",
-    x = "Componentes principales",
-    y = "Porcentaje de varianza explicada (%)"
-  ) +
-  theme_minimal() +
-  theme(
-    plot.title = element_text(
-      size = 16, face = "bold", hjust = 0.5
-    ),
-    plot.subtitle = element_text(
-      size = 11, hjust = 0.5, color = "gray40"
-    ),
-    axis.title = element_text(size = 12, face = "bold"),
-    axis.text = element_text(size = 10),
-    panel.grid.minor = element_blank()
-  )
+         ncp = 47,labelsize=1.5)
+
 summary(pca)
 
 # Calculamos la proporción de varianza explicada
@@ -1703,91 +1734,17 @@ cumsum(varianza) * 100
 
 
 ```
-Todas las desviaciones tipicas son distintas de cero por lo que aportan variabilidad y podremos incluirlas en el PCA.
-Al estar en diferentes unidades de medida por eso se pone scale=True
-La primera componente PC1 explica por si sola 35.88%
-LUtilizando las dos primeras componente explican conjuntamente 53.48%(PC2=17.6%)
-Utilizando las tres primeras 68.96%(PC3=15.48%)
-Utilizando las cuatro primeras 81.8088%(PC4=12.84%)
-Utilizando las cinco 92.76%(PC5=10.96%)
-Por tanto, si represento con dos dimensiones los datos, estaremos mostrando aprox 53.48% de la info total
 
+Todas las desviaciones tipicas son distintas de cero por lo que aportan
+variabilidad y podremos incluirlas en el PCA. Al estar en diferentes
+unidades de medida por eso se pone scale=True La primera componente PC1
+explica por si sola 35.88% LUtilizando las dos primeras componente
+explican conjuntamente 53.48%(PC2=17.6%) Utilizando las tres primeras
+68.96%(PC3=15.48%) Utilizando las cuatro primeras 81.8088%(PC4=12.84%)
+Utilizando las cinco 92.76%(PC5=10.96%) Por tanto, si represento con dos
+dimensiones los datos, estaremos mostrando aprox 53.48% de la info total
 
-```{r}
-#Transformación ortonormal de PCA
-
-# Semilla para reproducibilidad
-set.seed(42)
-
-# Datos correlacionados
-n <- 100
-x1 <- rnorm(n, mean = 0, sd = 2)
-x2 <- 0.8 * x1 + rnorm(n, mean = 0, sd = 1)
-data <- data.frame(x1, x2)
-
-# PCA
-pca <- prcomp(data, center = TRUE, scale. = TRUE)
-
-# Guardar nuevas varialbes
-data_pca <- as.data.frame(pca$x)
-colnames(data_pca) <- c("PC1", "PC2")
-
-# Gráfico datos originales
-p1 <- ggplot(data, aes(x1, x2)) +
-  geom_point(color = "blue", alpha = 0.6) +
-  geom_vline(xintercept = 0, linetype = "dashed") +
-  geom_hline(yintercept = 0, linetype = "dashed") +
-  coord_fixed() +
-  ggtitle("Datos originales")
-
-# Gráfico componentes
-p2 <- ggplot(data_pca, aes(PC1, PC2)) +
-  geom_point(color = "red", alpha = 0.6) +
-  geom_vline(xintercept = 0, linetype = "dashed") +
-  geom_hline(yintercept = 0, linetype = "dashed") +
-  coord_fixed(ratio=1.5) +
-  ggtitle("Datos transformados (PCA)")
-
-grid.arrange(p1, p2, ncol = 2)
-```
-
-
-```{r}
-# Librerias
-library(FactoMineR)
-library(factoextra)
-library(ggplot2)
-library(gridExtra)
-
-# 1. Preparar los datos
-# Excluimos la variable respuesta efectos
-datos_reduccion <- datos_train_imp %>%
-  select(-efectos)
-
-# 2. Comprobar los tipos de variables
-str(datos_reduccion)
-
-# 3. Aplicar FAMD
-famd <- FAMD(datos_reduccion, graph = FALSE)
-
-# 4. Obtener las nuevas variables
-datos_famd <- as.data.frame(famd$ind$coord)
-
-# 5. Representar los individuos
-p1 <- fviz_famd_ind(famd,
-                    geom = "point",
-                    alpha.ind = 0.6) +
-  ggtitle("Datos transformados (FAMD)")
-
-# 6. Representar las variables
-p2 <- fviz_famd_var(famd,
-                    repel = TRUE) +
-  ggtitle("Variables (FAMD)")
-
-# 7. Mostrar los gráficos
-grid.arrange(p1, p2, ncol = 2)
-
-# 8. Varianza explicada
-famd$eig
-
-```
+Preguntas a Carmen:
+¿Teniendo tantas componentes principales cuantas dimensiones deberiamos coger?
+¿Se debe incluir bpm en el pca aunq ya lo hayamos eliminado?
+¿Se debe incluir la variable objetivo?
