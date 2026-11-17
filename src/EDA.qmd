@@ -584,7 +584,7 @@ sumo aporta un 0,56% de la información en la variable respuesta. Lo que
 es despreciable.
 
 **Test de ganancia de informacion:** este test nos da 0, por lo que la
-variable no parece aportar nada de inforación para la variable
+variable no parece aportar nada de información para la variable
 respuesta.
 
 Por todos estos resultados junto con la gran cantidad de datos faltantes
@@ -848,6 +848,8 @@ variable de género musical favorito, se aprecia claramente que el género
 preferido entre los participantes es el Rock, seguido por el Pop y que
 los géneros con menor representación como favoritos son el folk y el
 conjunto de otros géneros.
+
+**¿Existe algún género musical que tenga efecto positivo en alguna de las enfermedades mentales? ¿Cuáles son los géneros más/menos escuchados entre la gente con depresión/ansiedad/ocd/insomnia?**
 
 Para ello primero agruparemos por edad de 10 en diez a los participante
 
