@@ -1,0 +1,203 @@
+---
+title: "Analisis Exploratorio de Datos"
+subtitle: "Primera entrega minería de datos"
+author: "Carolina Díaz Alende,María Díaz Ramos,Rodrigo López Torres"
+date: today
+date-format: "DD [de] MMMM [de] YYYY"
+lang: es
+format:
+  html:
+    theme: cosmo
+    toc: true
+    toc-title: "Contenido del informe"
+    toc-depth: 3
+    code-fold: true
+    code-copy: true
+    code-tools: true
+    embed-resources: true
+    number-sections: true
+edito: visual
+editor: 
+  markdown: 
+    wrap: 72
+warning: false
+---
+
+## Punto de partida y planteamiento del análisis.
+```{r}
+library(recipes) #arbol de imputación con guardado
+library(gridExtra)#para realizar pca
+library(factoextra)
+
+
+####################
+datos <- read.csv("../data/musicData.csv",na.strings = c("", " ", "NA", "NaN"))
+colnames(datos) <- c("fecha","edad", "plataforma", "horas_pd", "trabajando", "instrumentista", "musico", "genero_fav", "explorador", "extranjero", "bpm", "f_clasica", "f_country", "f_edm", "f_folk", "f_gospel", "f_hiphop", "f_jazz", "f_kpop", "f_latin", "f_lofi", "f_metal","f_pop", "f_ryb", "f_rap", "f_rock", "f_vgm", "ansiedad", "depresion", "insomnio", "ocd","efectos","permisos")
+#Partición
+set.seed(154684)
+idx_tt_val <- createDataPartition(datos_preparticion$efectos,p = 0.8)
+datos_tt <- datos_preparticion[idx_tt_val$Resample1,]
+set.seed(154684)
+idx_tt <- createDataPartition(datos_tt$efectos,p = 0.65)
+datos_train <- datos_tt[idx_tt$Resample1,]
+datos_test <- datos_tt[-idx_tt$Resample1,]
+datos_val <- datos_preparticion[-idx_tt_val$Resample1,]
+#Creamos la copia para guardar el previo al cambio
+datos_train_bpm <- datos_train
+#Convertimos en NA los valores fuera del rango normal
+datos_train$bpm[datos_train$bpm < 40 | datos_train$bpm > 220] <- NA
+#"Eliminamos/dejamos en cuarentena bpm"
+datos_train_sinbpm <- datos_train %>% 
+  select(-bpm)
+
+
+#Receta de imputación
+#Excluimos la variable objetivo
+predictores <- setdiff(names(datos_train_sinbpm), "efectos")
+#Crear receta
+receta <- recipe(~ ., data = datos_train_sinbpm[, predictores, drop = FALSE]) |>
+  step_impute_bag(extranjero,instrumentista,trabajando,plataforma, # variables a imputar
+                  trees = 25,seed_val = 123)
+
+#Aplicamos a train
+receta_entrenada <- prep(receta,training = datos_train_sinbpm[, predictores, drop = FALSE])
+
+#Guardamos la "receta"
+saveRDS(receta_entrenada,file = "receta_imputacion.rds")
+
+#Cargamos la receta
+receta_recuperada <- readRDS("receta_imputacion.rds")
+
+# Función para imputar nuevos datos
+imputar_datos <- function(df, receta, predictores) {
+  # Imputar exclusivamente las variables predictoras
+  x_imputado <- bake(receta,new_data = df[, predictores, drop = FALSE])
+  # Sustituir las variables originales
+  df[predictores] <- as.data.frame(x_imputado)
+  return(df)
+}
+
+datos_train_imp <- imputar_datos(datos_train_sinbpm, receta_recuperada, predictores) #aqui le aplicamos la imputación creada
+#eliminamos na de var respuesta
+datos_train_imp <- datos_train_imp[!is.na(datos_train_imp[[ncol(datos_train_imp)]]), ]
+#podemos eliminar la plataforma
+```
+
+A tener en cuenta 
+
+| Enfermedad | Bajo | Punto medio | Alto |
+|:-----------|:----:|------------:|-----:|
+| Insomnio   | 0-3  |           4 | 5-10 |
+| Depresion  | 0-3  |           4 | 5-10 |
+| Ansiedad   | 0-4  |           5 | 6-10 |
+| OCD        | 0-2  |           3 | 4-10 |
+**Habrá que explicar más etc**
+
+##Reducción de la dimensionalidad
+
+
+Al estar tratando las componentes principales sabemos que tendremos que
+modificar las variables categóricas en numéricas. A continuación
+explicaremos como se han alterado cada variable.
+
+**genero_fav, plataforma:** hemos generado variables dummy, es decir, variables numéricas que sirven para representar las categóricas. En este caso utilizamos la secuencia 0 y 1, en el caso de genero favorito se generarán nuevas variables (columnas) que representen cada género de música y en cada fila aparecerá 1 ó 0 dependiendo de si en el género favorito de ese encuestante o no respectivamente. Por oto lado, el caso de plataforma es análogo solo que 1 representa si escucha en esa plataforma y 0 si no.
+
+**trabajando,instrumentisra,musico,explorador,extranjero:** en el caso de estas cinco variables, tenemos un claro ejemplo de binariedad ya que se clasifican en "yes" y "no", que se representarán con 1 y 0 respectivamente.
+
+**Variables frecuencia:** en las distintas variables de frecuencia de escucha aparecen cuatro categorías según el ritmo en en cada encuestado ha escuchado música. En este caso, se utilizarán los valores numéricos 1 para "never", 2 para "rarely", 3 para "sometimes" y 4 para "always".
+
+
+```{r}
+# Modificamos la variable genero_fav
+generos <- as.data.frame(
+  model.matrix(~ genero_fav - 1, data = datos_train_imp)
+)
+names(generos) <- sub("genero_fav", "genero_", names(generos))
+
+# Eliminamos la variable original y añadimos las nuevas
+datos_pca <- cbind(
+  datos_train_imp %>% select(-genero_fav),
+  generos
+)
+
+# Modificamos la variable plataforma
+plataformas <- as.data.frame(
+  model.matrix(~ plataforma - 1, data = datos_pca)
+)
+names(plataformas) <- sub("plataforma","plataforma_",names(plataformas))
+# Eliminamos la variable original y añadimos las nuevas
+datos_pca <- datos_pca %>%
+  select(-plataforma) %>%
+  bind_cols(plataformas)
+
+#Modificamos a variables binarias trabajando,instrumentisra,musico,explorador,extranjero
+datos_pca <- datos_pca %>%
+  mutate(across(
+    c(trabajando, instrumentista, musico, explorador, extranjero),
+    ~ case_when(
+      tolower(as.character(.x)) == "yes" ~ 1,
+      tolower(as.character(.x)) == "no" ~ 0,
+      TRUE ~ NA_real_
+    )
+  ))
+
+#Modificamos a variable numerica las variables frecuencia
+datos_pca <- datos_pca %>%
+  mutate(across(
+    starts_with("f_"),
+    ~ case_when(
+      tolower(as.character(.x)) == "never" ~ 1,
+      tolower(as.character(.x)) == "rarely" ~ 2,
+      tolower(as.character(.x)) == "sometimes" ~ 3,
+      tolower(as.character(.x)) == "very frequently" ~ 4,
+      TRUE ~ NA_real_
+    )
+  ))
+
+# Comprobar el tipo de cada variable
+sapply(datos_pca, class)
+
+```
+
+```{r}
+datos_pca_final <- datos_pca %>%
+  select(-efectos)
+
+pca <- prcomp(
+  datos_pca_final,
+  center = TRUE,
+  scale. = TRUE
+)
+
+fviz_eig(pca,
+         addlabels = TRUE,
+         ncp = 47,labelsize=1.5)
+
+summary(pca)
+
+# Calculamos la proporción de varianza explicada
+varianza <- pca$sdev^2 / sum(pca$sdev^2)
+
+# Porcentaje de varianza explicada
+varianza * 100
+
+# Porcentaje acumulado
+cumsum(varianza) * 100
+
+
+```
+
+Todas las desviaciones tipicas son distintas de cero por lo que aportan
+variabilidad y podremos incluirlas en el PCA. Al estar en diferentes
+unidades de medida por eso se pone scale=True La primera componente PC1
+explica por si sola 35.88% LUtilizando las dos primeras componente
+explican conjuntamente 53.48%(PC2=17.6%) Utilizando las tres primeras
+68.96%(PC3=15.48%) Utilizando las cuatro primeras 81.8088%(PC4=12.84%)
+Utilizando las cinco 92.76%(PC5=10.96%) Por tanto, si represento con dos
+dimensiones los datos, estaremos mostrando aprox 53.48% de la info total
+
+Preguntas a Carmen:
+¿Teniendo tantas componentes principales cuantas dimensiones deberiamos coger?
+¿Se debe incluir bpm en el pca aunq ya lo hayamos eliminado?
+¿Se debe incluir la variable objetivo?
+
