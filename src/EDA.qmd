@@ -849,7 +849,9 @@ preferido entre los participantes es el Rock, seguido por el Pop y que
 los géneros con menor representación como favoritos son el folk y el
 conjunto de otros géneros.
 
-**¿Existe algún género musical que tenga efecto positivo en alguna de las enfermedades mentales? ¿Cuáles son los géneros más/menos escuchados entre la gente con depresión/ansiedad/ocd/insomnia?**
+**¿Existe algún género musical que tenga efecto positivo en alguna de
+las enfermedades mentales? ¿Cuáles son los géneros más/menos escuchados
+entre la gente con depresión/ansiedad/ocd/insomnia?**
 
 Para ello primero agruparemos por edad de 10 en diez a los participante
 
@@ -1644,9 +1646,6 @@ la música que no conocíamos. En cualquier caso, toda la información que
 nos ha proporcionado ha sido comprobada y contrastada con otras fuentes
 para asegurarnos de que fuera correcta.
 
-
-
-
 #Practica 2
 
 ## Componentes principales (PCA)
@@ -1655,11 +1654,25 @@ Al estar tratando las componentes principales sabemos que tendremos que
 modificar las variables categóricas en numéricas. A continuación
 explicaremos como se han alterado cada variable.
 
-**genero_fav, plataforma:** hemos generado variables dummy, es decir, variables numéricas que sirven para representar las categóricas. En este caso utilizamos la secuencia 0 y 1, en el caso de genero favorito se generarán nuevas variables (columnas) que representen cada género de música y en cada fila aparecerá 1 ó 0 dependiendo de si en el género favorito de ese encuestante o no respectivamente. Por oto lado, el caso de plataforma es análogo solo que 1 representa si escucha en esa plataforma y 0 si no.
+**genero_fav, plataforma:** hemos generado variables dummy, es decir,
+variables numéricas que sirven para representar las categóricas. En este
+caso utilizamos la secuencia 0 y 1, en el caso de genero favorito se
+generarán nuevas variables (columnas) que representen cada género de
+música y en cada fila aparecerá 1 ó 0 dependiendo de si en el género
+favorito de ese encuestante o no respectivamente. Por oto lado, el caso
+de plataforma es análogo solo que 1 representa si escucha en esa
+plataforma y 0 si no.
 
-**trabajando,instrumentisra,musico,explorador,extranjero:** en el caso de estas cinco variables, tenemos un claro ejemplo de binariedad ya que se clasifican en "yes" y "no", que se representarán con 1 y 0 respectivamente.
+**trabajando,instrumentisra,musico,explorador,extranjero:** en el caso
+de estas cinco variables, tenemos un claro ejemplo de binariedad ya que
+se clasifican en "yes" y "no", que se representarán con 1 y 0
+respectivamente.
 
-**Variables frecuencia:** en las distintas variables de frecuencia de escucha aparecen cuatro categorías según el ritmo en en cada encuestado ha escuchado música. En este caso, se utilizarán los valores numéricos 1 para "never", 2 para "rarely", 3 para "sometimes" y 4 para "always".
+**Variables frecuencia:** en las distintas variables de frecuencia de
+escucha aparecen cuatro categorías según el ritmo en en cada encuestado
+ha escuchado música. En este caso, se utilizarán los valores numéricos 1
+para "never", 2 para "rarely", 3 para "sometimes" y 4 para "always".
+
 ```{r}
 # Modificamos la variable genero_fav
 generos <- as.data.frame(
@@ -1749,7 +1762,6 @@ explican conjuntamente 53.48%(PC2=17.6%) Utilizando las tres primeras
 Utilizando las cinco 92.76%(PC5=10.96%) Por tanto, si represento con dos
 dimensiones los datos, estaremos mostrando aprox 53.48% de la info total
 
-Preguntas a Carmen:
-¿Teniendo tantas componentes principales cuantas dimensiones deberiamos coger?
-¿Se debe incluir bpm en el pca aunq ya lo hayamos eliminado?
-¿Se debe incluir la variable objetivo?
+Preguntas a Carmen: ¿Teniendo tantas componentes principales cuantas
+dimensiones deberiamos coger? ¿Se debe incluir bpm en el pca aunq ya lo
+hayamos eliminado? ¿Se debe incluir la variable objetivo?

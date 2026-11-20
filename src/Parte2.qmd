@@ -28,7 +28,7 @@ warning: false
 library(recipes) #arbol de imputación con guardado
 library(gridExtra)#para realizar pca
 library(factoextra)
-
+library(caret)
 
 ####################
 datos <- read.csv("../data/musicData.csv",na.strings = c("", " ", "NA", "NaN"))
