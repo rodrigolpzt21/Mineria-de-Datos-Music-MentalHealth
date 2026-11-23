@@ -1,6 +1,6 @@
 ---
-title: "Analisis Exploratorio de Datos"
-subtitle: "Primera entrega minería de datos"
+title: "Técnicas de Minería de Datos"
+subtitle: "Segunda entrega minería de datos"
 author: "Carolina Díaz Alende,María Díaz Ramos,Rodrigo López Torres"
 date: today
 date-format: "DD [de] MMMM [de] YYYY"
@@ -24,14 +24,22 @@ warning: false
 ---
 
 ## Punto de partida y planteamiento del análisis.
-```{r}
+
+Para esta segunda entrega partimos de lo obtenido durante la exploración
+inicial de nuestros datos. Vamos a empezar imputando nuestros datos con
+la receta de imputación que guardamos de la primera parte y
+transformando a valores faltantes los datos atípicos de la variable bpm,
+que ya concluimos que se podría tratar de un error por estar bastante
+alejados del rango de valores normales (menores que 40 o mayores de
+220).
+
+```{r, include=FALSE}
 library(recipes) #arbol de imputación con guardado
 library(gridExtra)#para realizar pca
 library(factoextra)
 library(caret)
 library(tidyverse)
 
-####################
 datos <- read.csv("../data/musicData.csv",na.strings = c("", " ", "NA", "NaN"))
 colnames(datos) <- c("fecha","edad", "plataforma", "horas_pd", "trabajando", "instrumentista", "musico", "genero_fav", "explorador", "extranjero", "bpm", "f_clasica", "f_country", "f_edm", "f_folk", "f_gospel", "f_hiphop", "f_jazz", "f_kpop", "f_latin", "f_lofi", "f_metal","f_pop", "f_ryb", "f_rap", "f_rock", "f_vgm", "ansiedad", "depresion", "insomnio", "ocd","efectos","permisos")
 datos_factor <- datos %>% mutate_if(is.character, as.factor)  %>% 
@@ -89,7 +97,21 @@ datos_train_imp <- datos_train_imp[!is.na(datos_train_imp[[ncol(datos_train_imp)
 #podemos eliminar la plataforma
 ```
 
-A tener en cuenta 
+Debemos tener en cuenta las conclusiones obtenidas en la exploración
+inicial. Con una matriz de correlaciones y tras la simulación de modelo
+lineales y multilineales vimos que había una relación lineal y
+correlación entre las variables depresión, ansiedad e insomnio. Además a
+partir de los resultados del ANOVA de la parte uno y el sesgo de la
+muestra hacia los participantes más jóvenes, nos hace pensar que las
+variables ansiedad y depresión se agruparán en un mismo componente
+principal junto con la edad. Como los jóvenes tienen puntuaciones más
+altas en ansiedad y depresión, la variable edad probablemente tendrá
+signo negativo. Tendremos que asegurarnos de escalar los datos para el
+PCA ya que la edad se mide en años y la ansiedad y depresión se miden
+del cero al diez.
+
+Recordamos los parámetros que establecimos en la anterior entrega sobre
+las puntuaciones de las variables de salud.
 
 | Enfermedad | Bajo | Punto medio | Alto |
 |:-----------|:----:|------------:|-----:|
@@ -97,23 +119,48 @@ A tener en cuenta
 | Depresion  | 0-3  |           4 | 5-10 |
 | Ansiedad   | 0-4  |           5 | 6-10 |
 | OCD        | 0-2  |           3 | 4-10 |
-**Habrá que explicar más etc**
 
-##Reducción de la dimensionalidad
+En el análisis exploratorio detectamos patrones de consumo musical,
+donde el Rock y el Pop eran los géneros más escuchados y en el extremo
+opuesto Folk y la categoría Otros géneros tenían menos representación en
+la muestra. Por lo que las dos primeras probablemente dominarán los
+primeros componentes principales del PCA, mientras que los segundos
+pertenecerán a componentes de menor importancia.
 
+Veremos más adelante si nuestras sospechas sobre el PCA se cumplen.
+
+## Reducción de la dimensionalidad
+
+Para la reducción de dimensionalidad de nuestros datos elegimos aplcar
+el Análisis de Componentes Principales (PCA) frente al Escalamiento
+Multidimensional (MDS) porque partimos de una matriz de observaciones y
+variables (numéricas y categóricas en formato numérico) y buscamos
+resumir las relaciones ente ellas.
 
 Al estar tratando las componentes principales sabemos que tendremos que
 modificar las variables categóricas en numéricas. A continuación
 explicaremos como se han alterado cada variable.
 
-**genero_fav, plataforma:** hemos generado variables dummy, es decir, variables numéricas que sirven para representar las categóricas. En este caso utilizamos la secuencia 0 y 1, en el caso de genero favorito se generarán nuevas variables (columnas) que representen cada género de música y en cada fila aparecerá 1 ó 0 dependiendo de si en el género favorito de ese encuestante o no respectivamente. Por oto lado, el caso de plataforma es análogo solo que 1 representa si escucha en esa plataforma y 0 si no.
+**genero_fav, plataforma:** hemos generado variables dummy, es decir,
+variables numéricas que sirven para representar las categóricas. En este
+caso utilizamos la secuencia 0 y 1, en el caso de genero favorito se
+generarán nuevas variables (columnas) que representen cada género de
+música y en cada fila aparecerá 1 ó 0 dependiendo de si en el género
+favorito de ese encuestante o no respectivamente. Por oto lado, el caso
+de plataforma es análogo solo que 1 representa si escucha en esa
+plataforma y 0 si no.
 
-**trabajando,instrumentisra,musico,explorador,extranjero:** en el caso de estas cinco variables, tenemos un claro ejemplo de binariedad ya que se clasifican en "yes" y "no", que se representarán con 1 y 0 respectivamente.
+**trabajando,instrumentisra,musico,explorador,extranjero:** en el caso
+de estas cinco variables, tenemos un claro ejemplo de binariedad ya que
+se clasifican en "yes" y "no", que se representarán con 1 y 0
+respectivamente.
 
-**Variables frecuencia:** en las distintas variables de frecuencia de escucha aparecen cuatro categorías según el ritmo en en cada encuestado ha escuchado música. En este caso, se utilizarán los valores numéricos 1 para "never", 2 para "rarely", 3 para "sometimes" y 4 para "always".
+**Variables frecuencia:** en las distintas variables de frecuencia de
+escucha aparecen cuatro categorías según el ritmo en en cada encuestado
+ha escuchado música. En este caso, se utilizarán los valores numéricos 1
+para "never", 2 para "rarely", 3 para "sometimes" y 4 para "always".
 
-
-```{r}
+```{r, include=FALSE}
 # Modificamos la variable genero_fav
 generos <- as.data.frame(
   model.matrix(~ genero_fav - 1, data = datos_train_imp)
@@ -165,7 +212,16 @@ sapply(datos_pca, class)
 
 ```
 
+Una vez modificadas las variables, continuamos exluyendo la variable
+objetivo (efectos) ya que el PCA es una técnica no supervisada y no
+utiliza la variable respuesta. También centramos las variables y las
+estandarizamos para que variables en distintas escalas no salgan
+dominantes por su magnitud. Calculamos la varianza explicada por cada
+componente principal y el porcentaje acumulado para evaluar cuánta
+infromación recoge cada dimensión.
+
 ```{r}
+#| echo: false
 datos_pca_final <- datos_pca %>%
   select(-efectos)
 
@@ -181,6 +237,9 @@ fviz_eig(pca,
 
 summary(pca)
 
+```
+
+```{r, include=FALSE}
 # Calculamos la proporción de varianza explicada
 varianza <- pca$sdev^2 / sum(pca$sdev^2)
 
@@ -189,21 +248,38 @@ varianza * 100
 
 # Porcentaje acumulado
 cumsum(varianza) * 100
-
-
 ```
 
+El eje horizontal muestra las 47 dimensiones (componentes principales).
+El eje vertical muestra el porcentaje de varianza explicada por cada
+componente de forma individual.
+
+En el gráfico se ve que la primera dimensión recoge el mayor porcentaje
+(en torno al 9%) descendiente gradualmente a lo largo del resto de
+dimensiones hasta llegar a 0% en las últimas.
+
+Al avanzar de forma escalonada de la dimensión 11 en adelante, donde ya
+se supera el 50% acumulado, se necesitan bastantes dimesiones para
+acumular un porcentaje alto de carianza total. A partir de la dimensión
+45 se alcanza el 100% de la variabilidad total.
+
 Todas las desviaciones tipicas son distintas de cero por lo que aportan
-variabilidad y podremos incluirlas en el PCA. Al estar en diferentes
-unidades de medida por eso se pone scale=True La primera componente PC1
-explica por si sola 35.88% LUtilizando las dos primeras componente
-explican conjuntamente 53.48%(PC2=17.6%) Utilizando las tres primeras
-68.96%(PC3=15.48%) Utilizando las cuatro primeras 81.8088%(PC4=12.84%)
-Utilizando las cinco 92.76%(PC5=10.96%) Por tanto, si represento con dos
-dimensiones los datos, estaremos mostrando aprox 53.48% de la info total
+variabilidad y podremos incluirlas en el PCA.
 
-Preguntas a Carmen:
-¿Teniendo tantas componentes principales cuantas dimensiones deberiamos coger?
-¿Se debe incluir bpm en el pca aunq ya lo hayamos eliminado?
-¿Se debe incluir la variable objetivo?
+La primera componente PC1 explica por si sola 35.88% LUtilizando las dos
+primeras componente explican conjuntamente 53.48%(PC2=17.6%) Utilizando
+las tres primeras 68.96%(PC3=15.48%) Utilizando las cuatro primeras
+81.8088%(PC4=12.84%) Utilizando las cinco 92.76%(PC5=10.96%) Por tanto,
+si represento con dos dimensiones los datos, estaremos mostrando aprox
+53.48% de la info total.
 
+```{r, include=FALSE}
+pca$rotation[, 1]
+```
+
+Mirando los valores absolutos más altos las variables que tienen más
+peso son las frecuencias de escucha de géneros.
+
+Preguntas a Carmen: ¿Teniendo tantas componentes principales cuantas
+dimensiones deberiamos coger? ¿Se debe incluir bpm en el pca aunq ya lo
+hayamos eliminado? ¿Se tiene que excluir efectos?
