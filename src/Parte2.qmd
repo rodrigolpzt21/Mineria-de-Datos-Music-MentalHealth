@@ -29,10 +29,17 @@ library(recipes) #arbol de imputación con guardado
 library(gridExtra)#para realizar pca
 library(factoextra)
 library(caret)
+library(tidyverse)
 
 ####################
 datos <- read.csv("../data/musicData.csv",na.strings = c("", " ", "NA", "NaN"))
 colnames(datos) <- c("fecha","edad", "plataforma", "horas_pd", "trabajando", "instrumentista", "musico", "genero_fav", "explorador", "extranjero", "bpm", "f_clasica", "f_country", "f_edm", "f_folk", "f_gospel", "f_hiphop", "f_jazz", "f_kpop", "f_latin", "f_lofi", "f_metal","f_pop", "f_ryb", "f_rap", "f_rock", "f_vgm", "ansiedad", "depresion", "insomnio", "ocd","efectos","permisos")
+datos_factor <- datos %>% mutate_if(is.character, as.factor)  %>% 
+    mutate(across(contains("f_"), 
+    ~ factor(.x, levels = c("Never", "Rarely", "Sometimes", "Very frequently"), ordered = TRUE)))
+datos_factor$genero_fav<-fct_collapse(datos_factor$genero_fav,"Otros géneros"=c("Gospel","Latin", "Lofi"))
+#Eliminamos la primera y la última columna (fecha y consentimiento)
+datos_preparticion <- datos_factor[, -c(1, ncol(datos_factor))]
 #Partición
 set.seed(154684)
 idx_tt_val <- createDataPartition(datos_preparticion$efectos,p = 0.8)
@@ -76,7 +83,6 @@ imputar_datos <- function(df, receta, predictores) {
   df[predictores] <- as.data.frame(x_imputado)
   return(df)
 }
-
 datos_train_imp <- imputar_datos(datos_train_sinbpm, receta_recuperada, predictores) #aqui le aplicamos la imputación creada
 #eliminamos na de var respuesta
 datos_train_imp <- datos_train_imp[!is.na(datos_train_imp[[ncol(datos_train_imp)]]), ]
