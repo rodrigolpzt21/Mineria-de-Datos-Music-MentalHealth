@@ -39,6 +39,10 @@ library(gridExtra)#para realizar pca
 library(factoextra)
 library(caret)
 library(tidyverse)
+library(dplyr)
+library(cluster)
+library(plotly)
+
 
 datos <- read.csv("../data/musicData.csv",na.strings = c("", " ", "NA", "NaN"))
 colnames(datos) <- c("fecha","edad", "plataforma", "horas_pd", "trabajando", "instrumentista", "musico", "genero_fav", "explorador", "extranjero", "bpm", "f_clasica", "f_country", "f_edm", "f_folk", "f_gospel", "f_hiphop", "f_jazz", "f_kpop", "f_latin", "f_lofi", "f_metal","f_pop", "f_ryb", "f_rap", "f_rock", "f_vgm", "ansiedad", "depresion", "insomnio", "ocd","efectos","permisos")
@@ -212,7 +216,7 @@ sapply(datos_pca, class)
 
 ```
 
-Una vez modificadas las variables, continuamos exluyendo la variable
+Una vez modificadas las variables, continuamos excluyendo la variable
 objetivo (efectos) ya que el PCA es una técnica no supervisada y no
 utiliza la variable respuesta. También centramos las variables y las
 estandarizamos para que variables en distintas escalas no salgan
@@ -231,116 +235,13 @@ pca <- prcomp(
   scale. = TRUE
 )
 
+summary(pca)
+pca$rotation[, 1]
+
 fviz_eig(pca,
          addlabels = TRUE,
          ncp = 47,labelsize=1.5)
 
-summary(pca)
-#> pairs(pca$x[,1:5]) y colorear por la variable objetivo
-# Ejemplo reduciendo los puntos y aumentando las etiquetas
-pairs(pca$x[, 1:5],
-      cex = 0.7,         # Puntos más pequeños (usa > 1 para hacerlos más grandes)
-      cex.labels = 1.5,  # Nombres de PC1 a PC5 más grandes
-      cex.axis = 0.8)    # Números de los ejes más pequeños
-```
-
-```{r, include=FALSE}
-# Calculamos la proporción de varianza explicada
-varianza <- pca$sdev^2 / sum(pca$sdev^2)
-
-# Porcentaje de varianza explicada
-varianza * 100
-
-# Porcentaje acumulado
-cumsum(varianza) * 100
-```
-
-El eje horizontal muestra las 47 dimensiones (componentes principales).
-El eje vertical muestra el porcentaje de varianza explicada por cada
-componente de forma individual.
-
-En el gráfico se ve que la primera dimensión recoge el mayor porcentaje
-(en torno al 9%) descendiente gradualmente a lo largo del resto de
-dimensiones hasta llegar a 0% en las últimas.
-
-Al avanzar de forma escalonada de la dimensión 11 en adelante, donde ya
-se supera el 50% acumulado, se necesitan bastantes dimesiones para
-acumular un porcentaje alto de carianza total. A partir de la dimensión
-45 se alcanza el 100% de la variabilidad total.
-
-Todas las desviaciones tipicas son distintas de cero por lo que aportan
-variabilidad y podremos incluirlas en el PCA..
-
-```{r, include=FALSE}
-pca$rotation[, 1]
-```
-
-Mirando los valores absolutos más altos las variables que tienen más
-peso son las frecuencias de escucha de géneros.
-
-Sin embargo, al obtener estos resultados no tendría mucho sentido aplicar el PCA sobre todas las variables puesto que solo para obtener un 85% de la información necesitaríamos 28 componentes principales, por lo que no existiría una reducción significativa de la dimensionalidad. Como solución para este problema vamos a aplicar el PCA solo sobre algunas de las variables, dejando fuera de nuevo la variable y objetivo y las variables dummy (las relacionadas con genero favorito y plataforma) puesto que nos generan muchas columnas nuevas que nos pueden influenciar el resultado.
-
-```{r}
-# Variables relacionadas con la salud mental
-vars_salud <- c(
-  "ansiedad",
-  "depresion",
-  "insomnio",
-  "ocd"
-)
-
-# Seleccionamos únicamente las variables que utilizaremos
-datos_pca2 <- datos_train_imp %>%
-  select(
-    edad,
-    horas_pd,
-    all_of(vars_f),
-    all_of(vars_salud)
-  )
-
-# Comprobamos las dimensiones
-dim(datos_pca2)
-names(datos_pca2)
-
-
-#Transformamos las variables ordinales como se ha hecho en el caso anterior
-datos_pca2 <- datos_pca2 %>%
-  mutate(across(
-    starts_with("f_"),
-    ~ case_when(
-      tolower(as.character(.x)) == "never" ~ 1,
-      tolower(as.character(.x)) == "rarely" ~ 2,
-      tolower(as.character(.x)) == "sometimes" ~ 3,
-      tolower(as.character(.x)) == "very frequently" ~ 4,
-      TRUE ~ NA_real_
-    )
-  ))
-#Comprobamos que todos los valores son numéricos
-sapply(datos_pca2,class)
-
-# Número de valores ausentes por variable
-colSums(is.na(datos_pca2))
-
-```
-
-```{r}
-
-#Aplicamos el PCA
-pca <- prcomp(
-  datos_pca2,
-  center = TRUE,
-  scale. = TRUE
-)
-
-
-# Resumen del PCA
-summary(pca)
-
-fviz_eig(
-  pca,
-  addlabels = TRUE,
-  ncp = 22,labelsize=1.5
-)
 ```
 
 ```{r}
@@ -359,83 +260,360 @@ tabla_varianza
 
 ```
 
+El diagrama de barras nos ha servido para poder visualizar la varianza
+que aporta cada componente principal, apareciendo en el eje horizontal
+las 47 dimensiones (componentes principales) obtenidas, y en el eje
+vertical el porcentaje de varianza explicada por cada componente de
+forma individual. Además la tabla generada nos irá mostrando la varianza
+acumulada obtenida, se ve que la primera dimensión recoge el mayor
+porcentaje (en torno al 9%) descendiendo gradualmente a lo largo del
+resto de dimensiones hasta llegar a 0% en las últimas. Al avanzar de
+forma escalonada de la dimensión 11 en adelante, donde ya se supera el
+50% acumulado, se necesitan bastantes dimesiones para acumular un
+porcentaje alto de varianza total.
+
 ```{r}
-
-#Queremos comprobar qué porcentaje de contribución tienen los tres bloques en cada componente: Variables personales, Frecuencias musicales, Salud mental.
-# Calculamos la contribución de cada variable
-contribucion <- as.data.frame(
-  100 * pca$rotation^2
-) %>%
-  tibble::rownames_to_column("variable")
-
-# Clasificamos las variables por bloques
-contribucion <- contribucion %>%
-  mutate(
-    bloque = case_when(
-      grepl("^f_", variable) ~ "Frecuencias musicales",
-
-      variable %in% vars_salud ~ "Salud mental",
-
-      variable %in% c("edad", "horas_pd") ~ "Datos personales"
-    )
-  )
-
-# Agrupamos las contribuciones
-contribucion_bloques <- contribucion %>%
-  pivot_longer(
-    cols = starts_with("PC"),
-    names_to = "Componente",
-    values_to = "Contribucion"
-  ) %>%
-  group_by(Componente, bloque) %>%
-  summarise(
-    Contribucion = sum(Contribucion),
-    .groups = "drop"
-  )
-
-contribucion_bloques
-ggplot(
-  contribucion_bloques %>%
-    filter(Componente %in% c("PC1", "PC2")),
-  aes(
-    x = Componente,
-    y = Contribucion,
-    fill = bloque
-  )
-) +
-  geom_col() +
-  labs(
-    title = "Contribución de los bloques a las componentes",
-    x = "Componentes principales",
-    y = "Contribución (%)",
-    fill = "Bloques"
-  ) +
-  theme_minimal()
-
-# Contribución de las variables a PC1
-fviz_contrib(
-  pca,
-  choice = "var",
-  axes = 1,
-  top = 10
+# Asignamos un color a cada categoría
+colores <- c(
+  "Improve" = "#CAFF70",
+  "No effect" = "#009ACD",
+  "Worsen" = "#B22222"
 )
 
-# Contribución de las variables a PC2
-fviz_contrib(
-  pca,
-  choice = "var",
-  axes = 2,
-  top = 10
+# Obtenemos el color de cada observación
+color_puntos <- colores[as.character(datos_train_imp$efectos)]
+
+# Representamos las cinco primeras componentes
+pairs(
+  pca$x[, 1:5],
+  col = color_puntos,
+  pch = 19,
+  cex = 0.7,
+  cex.labels = 1.5,
+  cex.axis = 0.8
+)
+
+# Añadimos la leyenda
+legend(
+  x = "topright", 
+  inset = c(-0.35, 0.1), # Mueve la leyenda hacia la derecha fuera de la matriz
+  legend = names(colores),
+  col = colores,
+  pch = 19,
+  cex = 0.8,
+  bty = "n"              # Sin caja para que se vea más limpio
+)
+
+
+```
+
+En el diagrama de dispersión hemos tomado una muestra de todas las
+componentes principales que habíamos obtenido, en concreto 5 componentes
+principales donde cada punto representa una observación de nuestro
+conjunto de datos y se han coloreado según la variable objetivo, efecto
+(*Improve,Worsen, No effect*). En cada cuadrícula hemos enfrentado dos
+componentes principales para ver si se distribuyen de manera diferentes.
+Esto lo hemos realizado con objetivo de ver si encontramos patrones
+entre los puntos de distintos colores puesto que si determinadas
+categorías tienden a centrarse en regiones diferentes podría significar
+que hay datos asociados a la variable objetivo. Sin embargo, como
+podemos observar, los datos aparecen entremezclados en la parte central
+de los gráficos por lo que estas componentes principales no permiten
+distinguir claramente los grupos según los efectos
+
+En conclusión, al obtener estos resultados no tendría mucho sentido
+aplicar el PCA sobre nuestro conjunto de datos puesto que solo para
+obtener un 50% de la información necesitaríamos 11 componentes
+principales, por lo que no existiría una reducción significativa de la
+dimensionalidad, pudiendo apoyar esta afirmación con lo obtenido en el
+diagrama. Este problema puede haber venido dado por el gran número de
+variables dummy (las relacionadas con genero favorito y plataforma)
+puesto que nos generan muchas variables nuevas que nos pueden
+influenciar el resultado. Como solución para este problema vamos a
+aplicar el escalado multidimensional (MDS) ya que este nos permitirá
+trabajar con variables de todos los tipos.
+
+Utilizaremos la distancia de Gower para poder trabajar con las variables
+no numéricas y calcular disimilitudes entre observaciones
+
+```{r}
+# Seleccionamos todas las variables explicativas
+datos_mds <- datos_train_imp %>%
+  select(-any_of(c("efectos")))
+
+# Comprobamos los tipos de las variables
+sapply(datos_mds, class)
+```
+
+En la preparación de los datos observamos que podemos conservar la
+naturaleza de cada variable. A continuación, calculamos la matriz de
+disimilitudes de Gower, en ella un valor próximo a 0 indica que las
+observaciones son muy similares y 1 en el caso contrario
+
+```{r}
+# Calculamos las distancias de Gower con las 736 observaciones
+d <- daisy(
+  datos_mds,
+  metric = "gower"
+)
+
+# Mostramos un fragmento de la matriz de disimilitudes
+round(as.matrix(d)[1:5, 1:5], 2)
+```
+
+Podemos observar que los valores son más cercanos a 0 por lo que serán
+bastante semejantes. Ahora calculamos los autovalores de la matriz
+
+```{r}
+# Aplicamos el MDS con seis dimensiones
+mds <- cmdscale(
+  d,
+  k = 20,
+  eig = TRUE
+)
+
+# Mostramos los diez primeros autovalores
+head(mds$eig, 20)
+
+
+# Seleccionamos todos los autovalores positivos
+eig_positivos <- mds$eig[mds$eig > 0]
+
+# Calculamos el porcentaje de cada autovalor
+porcentaje <- eig_positivos / sum(eig_positivos) * 100
+
+# Creamos la tabla con todas las dimensiones
+tabla_porcentajes <- data.frame(
+  Dimension = paste("Dimensión", seq_along(eig_positivos)),
+  Autovalor = eig_positivos,
+  Porcentaje = porcentaje,
+  Porcentaje_acumulado = cumsum(porcentaje)
+)
+
+# Mostramos la tabla completa
+knitr::kable(
+  tabla_porcentajes,
+  digits = 2,
+  col.names = c(
+    "Dimensión",
+    "Autovalor",
+    "Porcentaje (%)",
+    "Porcentaje acumulado (%)"
+  ),
+  caption = "Autovalores y porcentajes de todas las dimensiones positivas"
 )
 ```
-La primera componente PC1 explica por si sola 35.88% Utilizando las dos
-primeras componente explican conjuntamente 53.48%(PC2=17.6%) Utilizando
-las tres primeras 68.96%(PC3=15.48%) Utilizando las cuatro primeras
-81.8088%(PC4=12.84%) Utilizando las cinco 92.76%(PC5=10.96%) Por tanto,
-si represento con dos dimensiones los datos, estaremos mostrando aprox
-53.48% de la info total
+
+Observamos que todos estos autovalores son positivos y que van
+decreciendo, esto significa que las primeras dimensiones tienen una
+mayor importancia en la representación de disimilitudes. Al analizar los
+autovalores en mayor profundidad observamos que la primera dimensión
+representa un 11.69%, con dos dimension 8.03% obteniendo 19.72% total.
+Por tanto, observamos que la estructura de disimilitudes está bastante
+repartida entre varias dimensiones. Aplicando como vemos a continuación,
+el método del codo, observamos en la primera gráfica que el codo a
+partir del cual la gráfica se estabiliza sería en la dimensión 5 ó 6,
+representando un 36.56% ó 40.85%
+
+```{r}
+plot_ly(
+  data = tabla_porcentajes,
+  x = ~seq_along(Autovalor),
+  y = ~Autovalor,
+  type = "scatter",
+  mode = "lines+markers",
+  line = list(color = "steelblue", width = 2),
+  marker = list(color = "steelblue", size = 5),
+  text = ~paste(
+    "Dimensión:", Dimension,
+    "<br>Autovalor:", round(Autovalor, 2)
+  ),
+  hoverinfo = "text"
+) %>%
+  layout(
+    title = "Método del codo del MDS",
+    xaxis = list(
+      title = "Dimensiones",
+      dtick = 5
+    ),
+    yaxis = list(title = "Autovalores")
+  ) %>%
+  config(
+    displayModeBar = FALSE,
+    staticPlot = FALSE,
+    scrollZoom = FALSE
+  )
+datos_codo <- tabla_porcentajes[1:30, ]
+
+plot_ly(
+  data = datos_codo,
+  x = ~seq_len(nrow(datos_codo)),
+  y = ~Autovalor,
+  type = "scatter",
+  mode = "lines+markers",
+  line = list(color = "steelblue", width = 2),
+  marker = list(color = "steelblue", size = 6),
+  text = ~paste(
+    "Dimensión:", Dimension,
+    "<br>Autovalor:", round(Autovalor, 2)
+  ),
+  hoverinfo = "text"
+) %>%
+  layout(
+    title = "Método del codo del MDS",
+    xaxis = list(
+      title = "Dimensiones",
+      dtick = 5
+    ),
+    yaxis = list(title = "Autovalores")
+  ) %>%
+  config(
+    displayModeBar = FALSE,
+    staticPlot = FALSE,
+    scrollZoom = FALSE
+  )
 
 
-Preguntas a Carmen: ¿Teniendo tantas componentes principales cuantas
-dimensiones deberiamos coger? ¿Se debe incluir bpm en el pca aunq ya lo
-hayamos eliminado? ¿Se tiene que excluir efectos?
+```
+
+TRABAJAMOS EN DIMENSION 2
+
+```{r}
+# Seleccionamos dos dimensiones
+k_final <- 2
+
+mds <- cmdscale(d,k = k_final,eig = TRUE)
+
+# Guardamos las coordenadas
+coord <- as.data.frame(mds$points)
+colnames(coord) <- c("Dim1", "Dim2")
+# Consultamos las primeras observaciones
+head(coord)
+
+# Asignamos un color a cada categoría
+colores <- c(
+  "Improve" = "#CAFF70",
+  "No effect" = "#009ACD",
+  "Worsen" = "#B22222"
+)
+
+# Obtenemos los colores de las 736 observaciones
+color_puntos <- colores[
+  as.character(datos_train_imp$efectos)
+]
+
+# Representamos el MDS
+plot(
+  coord$Dim1,
+  coord$Dim2,
+  pch = 19,
+  col = color_puntos,
+  asp = 1,
+  xlab = "Dimensión 1",
+  ylab = "Dimensión 2",
+  main = "MDS en dos dimensiones"
+)
+
+# Añadimos la leyenda
+legend(
+  "topright",
+  legend = names(colores),
+  col = colores,
+  pch = 19,
+  bty = "n",
+  cex = 0.8
+)
+```
+
+Las proximidades entre observaciones: puntos cercanos tienen perfiles
+relativamente similares de acuerdo con Gower, puntos alejados, perfiles
+más distintos.
+
+```{r}
+# Seleccionamos las variables numéricas originales
+variables_numericas <- datos_mds[
+  , sapply(datos_mds, is.numeric),
+  drop = FALSE
+]
+
+# Calculamos las correlaciones entre las dimensiones del MDS
+# y las variables numéricas originales
+round(
+  cor(coord[, c("Dim1", "Dim2", "Dim3")],
+    variables_numericas,
+    use = "pairwise.complete.obs"),
+  2
+)
+```
+
+La matriz obtenida nos permitirá estudiar qué variables numéricas están
+más relacionadas con cada dimensión:
+
+- Una correlación próxima a **1** indica una relación lineal positiva
+  fuerte.
+
+- Una correlación próxima a **-1** indica una relación lineal negativa
+  fuerte.
+
+- Una correlación próxima a **0** indica que no se aprecia una relación
+  lineal importante.
+
+Por ejemplo, si `ansiedad` presenta una correlación elevada con `Dim1`,
+podríamos decir que las coordenadas de la primera dimensión están
+asociadas con las diferencias en los niveles de ansiedad.
+
+**Importante:** estas correlaciones son una herramienta descriptiva para
+ayudar a interpretar las dimensiones del MDS. No significan que las
+dimensiones se hayan construido exclusivamente a partir de esas
+variables ni que exista una relación causal. Además, solo estudian las
+variables numéricas; las categóricas y ordinales no quedan interpretadas
+mediante esta matriz.
+
+```{r}
+# Seleccionamos tres dimensiones
+k_final <- 3
+
+mds_final <- cmdscale(
+  d,
+  k = k_final,
+  eig = TRUE
+)
+
+# Guardamos las coordenadas
+coord <- as.data.frame(mds_final$points)
+
+colnames(coord) <- c("Dim1", "Dim2", "Dim3")
+
+# Consultamos las primeras observaciones
+head(coord)
+
+# Añadimos la variable objetivo
+coord$efectos <- factor(
+  as.character(datos_train_imp$efectos),
+  levels = names(colores)
+)
+
+# Representamos el MDS en tres dimensiones
+plot_ly(
+  data = coord,
+  x = ~Dim1,
+  y = ~Dim2,
+  z = ~Dim3,
+  color = ~efectos,
+  colors = unname(colores),
+  type = "scatter3d",
+  mode = "markers",
+  marker = list(
+    size = 3,
+    opacity = 0.75
+  )
+) %>%
+  layout(
+    title = "MDS en tres dimensiones",
+    scene = list(
+      xaxis = list(title = "Dimensión 1"),
+      yaxis = list(title = "Dimensión 2"),
+      zaxis = list(title = "Dimensión 3")
+    )
+  )
+```
