@@ -365,7 +365,7 @@ Podemos observar que los valores son más cercanos a 0 por lo que serán
 bastante semejantes. Ahora calculamos los autovalores de la matriz
 
 ```{r}
-# Aplicamos el MDS con seis dimensiones
+# Aplicamos el MDS con 20 dimensiones
 mds <- cmdscale(
   d,
   k = 20,
@@ -374,6 +374,15 @@ mds <- cmdscale(
 
 # Mostramos los diez primeros autovalores
 head(mds$eig, 20)
+
+# Extraemos las coordenadas de las observaciones
+coord <- as.data.frame(mds$points)
+
+# Nombramos las columnas
+colnames(coord) <- paste0("Dim", 1:ncol(coord))
+
+# Comprobamos las dimensiones disponibles
+colnames(coord)
 
 
 # Seleccionamos todos los autovalores positivos
@@ -536,12 +545,24 @@ variables_numericas <- datos_mds[
   drop = FALSE
 ]
 
-# Calculamos las correlaciones entre las dimensiones del MDS
-# y las variables numéricas originales
+# Calculamos un MDS independiente con tres dimensiones
+mds_cor <- cmdscale(
+  d,
+  k = 3,
+  eig = TRUE
+)
+
+# Extraemos las coordenadas
+coord_cor <- as.data.frame(mds_cor$points)
+colnames(coord_cor) <- c("Dim1", "Dim2", "Dim3")
+
+# Calculamos las correlaciones
 round(
-  cor(coord[, c("Dim1", "Dim2", "Dim3")],
+  cor(
+    coord_cor,
     variables_numericas,
-    use = "pairwise.complete.obs"),
+    use = "pairwise.complete.obs"
+  ),
   2
 )
 ```
