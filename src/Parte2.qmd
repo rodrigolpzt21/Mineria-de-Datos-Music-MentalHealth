@@ -236,7 +236,12 @@ fviz_eig(pca,
          ncp = 47,labelsize=1.5)
 
 summary(pca)
-
+#> pairs(pca$x[,1:5]) y colorear por la variable objetivo
+# Ejemplo reduciendo los puntos y aumentando las etiquetas
+pairs(pca$x[, 1:5],
+      cex = 0.7,         # Puntos más pequeños (usa > 1 para hacerlos más grandes)
+      cex.labels = 1.5,  # Nombres de PC1 a PC5 más grandes
+      cex.axis = 0.8)    # Números de los ejes más pequeños
 ```
 
 ```{r, include=FALSE}
