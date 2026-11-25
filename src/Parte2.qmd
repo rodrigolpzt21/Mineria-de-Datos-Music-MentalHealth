@@ -143,10 +143,10 @@ explicaremos como se han alterado cada variable.
 
 **genero_fav, plataforma:** hemos generado variables dummy, es decir,
 variables numéricas que sirven para representar las categóricas. En este
-caso utilizamos la secuencia 0 y 1, en el caso de genero favorito se
+caso utilizamos la secuencia 0 y 1, en el caso de género favorito se
 generarán nuevas variables (columnas) que representen cada género de
 música y en cada fila aparecerá 1 ó 0 dependiendo de si en el género
-favorito de ese encuestante o no respectivamente. Por oto lado, el caso
+favorito de ese encuestado o no respectivamente. Por oto lado, el caso
 de plataforma es análogo solo que 1 representa si escucha en esa
 plataforma y 0 si no.
 
@@ -264,14 +264,7 @@ acumular un porcentaje alto de carianza total. A partir de la dimensión
 45 se alcanza el 100% de la variabilidad total.
 
 Todas las desviaciones tipicas son distintas de cero por lo que aportan
-variabilidad y podremos incluirlas en el PCA.
-
-La primera componente PC1 explica por si sola 35.88% LUtilizando las dos
-primeras componente explican conjuntamente 53.48%(PC2=17.6%) Utilizando
-las tres primeras 68.96%(PC3=15.48%) Utilizando las cuatro primeras
-81.8088%(PC4=12.84%) Utilizando las cinco 92.76%(PC5=10.96%) Por tanto,
-si represento con dos dimensiones los datos, estaremos mostrando aprox
-53.48% de la info total.
+variabilidad y podremos incluirlas en el PCA..
 
 ```{r, include=FALSE}
 pca$rotation[, 1]
@@ -279,6 +272,164 @@ pca$rotation[, 1]
 
 Mirando los valores absolutos más altos las variables que tienen más
 peso son las frecuencias de escucha de géneros.
+
+Sin embargo, al obtener estos resultados no tendría mucho sentido aplicar el PCA sobre todas las variables puesto que solo para obtener un 85% de la información necesitaríamos 28 componentes principales, por lo que no existiría una reducción significativa de la dimensionalidad. Como solución para este problema vamos a aplicar el PCA solo sobre algunas de las variables, dejando fuera de nuevo la variable y objetivo y las variables dummy (las relacionadas con genero favorito y plataforma) puesto que nos generan muchas columnas nuevas que nos pueden influenciar el resultado.
+
+```{r}
+# Variables relacionadas con la salud mental
+vars_salud <- c(
+  "ansiedad",
+  "depresion",
+  "insomnio",
+  "ocd"
+)
+
+# Seleccionamos únicamente las variables que utilizaremos
+datos_pca2 <- datos_train_imp %>%
+  select(
+    edad,
+    horas_pd,
+    all_of(vars_f),
+    all_of(vars_salud)
+  )
+
+# Comprobamos las dimensiones
+dim(datos_pca2)
+names(datos_pca2)
+
+
+#Transformamos las variables ordinales como se ha hecho en el caso anterior
+datos_pca2 <- datos_pca2 %>%
+  mutate(across(
+    starts_with("f_"),
+    ~ case_when(
+      tolower(as.character(.x)) == "never" ~ 1,
+      tolower(as.character(.x)) == "rarely" ~ 2,
+      tolower(as.character(.x)) == "sometimes" ~ 3,
+      tolower(as.character(.x)) == "very frequently" ~ 4,
+      TRUE ~ NA_real_
+    )
+  ))
+#Comprobamos que todos los valores son numéricos
+sapply(datos_pca2,class)
+
+# Número de valores ausentes por variable
+colSums(is.na(datos_pca2))
+
+```
+
+```{r}
+
+#Aplicamos el PCA
+pca <- prcomp(
+  datos_pca2,
+  center = TRUE,
+  scale. = TRUE
+)
+
+
+# Resumen del PCA
+summary(pca)
+
+fviz_eig(
+  pca,
+  addlabels = TRUE,
+  ncp = 22,labelsize=1.5
+)
+```
+
+```{r}
+
+# Varianza explicada por cada componente
+varianza <- pca$sdev^2 / sum(pca$sdev^2)
+
+# Creamos una tabla resumen
+tabla_varianza <- data.frame(
+  Componente = paste0("PC", seq_along(varianza)),
+  Varianza = round(varianza * 100, 2),
+  Acumulada = round(cumsum(varianza) * 100, 2)
+)
+
+tabla_varianza
+
+```
+
+```{r}
+
+#Queremos comprobar qué porcentaje de contribución tienen los tres bloques en cada componente: Variables personales, Frecuencias musicales, Salud mental.
+# Calculamos la contribución de cada variable
+contribucion <- as.data.frame(
+  100 * pca$rotation^2
+) %>%
+  tibble::rownames_to_column("variable")
+
+# Clasificamos las variables por bloques
+contribucion <- contribucion %>%
+  mutate(
+    bloque = case_when(
+      grepl("^f_", variable) ~ "Frecuencias musicales",
+
+      variable %in% vars_salud ~ "Salud mental",
+
+      variable %in% c("edad", "horas_pd") ~ "Datos personales"
+    )
+  )
+
+# Agrupamos las contribuciones
+contribucion_bloques <- contribucion %>%
+  pivot_longer(
+    cols = starts_with("PC"),
+    names_to = "Componente",
+    values_to = "Contribucion"
+  ) %>%
+  group_by(Componente, bloque) %>%
+  summarise(
+    Contribucion = sum(Contribucion),
+    .groups = "drop"
+  )
+
+contribucion_bloques
+ggplot(
+  contribucion_bloques %>%
+    filter(Componente %in% c("PC1", "PC2")),
+  aes(
+    x = Componente,
+    y = Contribucion,
+    fill = bloque
+  )
+) +
+  geom_col() +
+  labs(
+    title = "Contribución de los bloques a las componentes",
+    x = "Componentes principales",
+    y = "Contribución (%)",
+    fill = "Bloques"
+  ) +
+  theme_minimal()
+
+# Contribución de las variables a PC1
+fviz_contrib(
+  pca,
+  choice = "var",
+  axes = 1,
+  top = 10
+)
+
+# Contribución de las variables a PC2
+fviz_contrib(
+  pca,
+  choice = "var",
+  axes = 2,
+  top = 10
+)
+```
+La primera componente PC1 explica por si sola 35.88% Utilizando las dos
+primeras componente explican conjuntamente 53.48%(PC2=17.6%) Utilizando
+las tres primeras 68.96%(PC3=15.48%) Utilizando las cuatro primeras
+81.8088%(PC4=12.84%) Utilizando las cinco 92.76%(PC5=10.96%) Por tanto,
+si represento con dos dimensiones los datos, estaremos mostrando aprox
+53.48% de la info total
+
 
 Preguntas a Carmen: ¿Teniendo tantas componentes principales cuantas
 dimensiones deberiamos coger? ¿Se debe incluir bpm en el pca aunq ya lo
