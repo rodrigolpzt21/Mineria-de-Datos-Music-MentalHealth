@@ -135,7 +135,7 @@ Veremos más adelante si nuestras sospechas sobre el PCA se cumplen.
 
 ## Reducción de la dimensionalidad
 
-Para la reducción de dimensionalidad de nuestros datos elegimos aplcar
+Para la reducción de dimensionalidad de nuestros datos elegimos aplicar
 el Análisis de Componentes Principales (PCA) frente al Escalamiento
 Multidimensional (MDS) porque partimos de una matriz de observaciones y
 variables (numéricas y categóricas en formato numérico) y buscamos
@@ -150,8 +150,8 @@ variables numéricas que sirven para representar las categóricas. En este
 caso utilizamos la secuencia 0 y 1, en el caso de género favorito se
 generarán nuevas variables (columnas) que representen cada género de
 música y en cada fila aparecerá 1 ó 0 dependiendo de si en el género
-favorito de ese encuestado o no respectivamente. Por oto lado, el caso
-de plataforma es análogo solo que 1 representa si escucha en esa
+favorito de ese encuestado o no respectivamente. Por oto lado, en
+la variable plataforma seguiremos un patrón similar solo que 1 representa si escucha en esa
 plataforma y 0 si no.
 
 **trabajando,instrumentisra,musico,explorador,extranjero:** en el caso
@@ -264,12 +264,12 @@ El diagrama de barras nos ha servido para poder visualizar la varianza
 que aporta cada componente principal, apareciendo en el eje horizontal
 las 47 dimensiones (componentes principales) obtenidas, y en el eje
 vertical el porcentaje de varianza explicada por cada componente de
-forma individual. Además la tabla generada nos irá mostrando la varianza
+forma individual. Además, la tabla generada nos irá mostrando la varianza
 acumulada obtenida, se ve que la primera dimensión recoge el mayor
 porcentaje (en torno al 9%) descendiendo gradualmente a lo largo del
 resto de dimensiones hasta llegar a 0% en las últimas. Al avanzar de
 forma escalonada de la dimensión 11 en adelante, donde ya se supera el
-50% acumulado, se necesitan bastantes dimesiones para acumular un
+50% acumulado, se necesitan bastantes dimensiones para acumular un
 porcentaje alto de varianza total.
 
 ```{r}
@@ -336,7 +336,7 @@ trabajar con variables de todos los tipos.
 Utilizaremos la distancia de Gower para poder trabajar con las variables
 no numéricas y calcular disimilitudes entre observaciones
 
-```{r}
+```{r, include=FALSE}
 # Seleccionamos todas las variables explicativas
 datos_mds <- datos_train_imp %>%
   select(-any_of(c("efectos")))
@@ -348,7 +348,7 @@ sapply(datos_mds, class)
 En la preparación de los datos observamos que podemos conservar la
 naturaleza de cada variable. A continuación, calculamos la matriz de
 disimilitudes de Gower, en ella un valor próximo a 0 indica que las
-observaciones son muy similares y 1 en el caso contrario
+observaciones son muy similares y 1 en el caso contrario.
 
 ```{r}
 # Calculamos las distancias de Gower con las 736 observaciones
@@ -417,12 +417,12 @@ Observamos que todos estos autovalores son positivos y que van
 decreciendo, esto significa que las primeras dimensiones tienen una
 mayor importancia en la representación de disimilitudes. Al analizar los
 autovalores en mayor profundidad observamos que la primera dimensión
-representa un 11.69%, con dos dimension 8.03% obteniendo 19.72% total.
+representa un 11.69%, con dos dimensiones 8.03% obteniendo 19.72% total.
 Por tanto, observamos que la estructura de disimilitudes está bastante
 repartida entre varias dimensiones. Aplicando como vemos a continuación,
 el método del codo, observamos en la primera gráfica que el codo a
 partir del cual la gráfica se estabiliza sería en la dimensión 5 ó 6,
-representando un 36.56% ó 40.85%
+representando un 36.56% ó 40.85%.
 
 ```{r}
 plot_ly(
@@ -484,157 +484,75 @@ plot_ly(
 
 
 ```
-
-TRABAJAMOS EN DIMENSION 2
-
-```{r}
-# Seleccionamos dos dimensiones
-k_final <- 2
-
-mds <- cmdscale(d,k = k_final,eig = TRUE)
-
-# Guardamos las coordenadas
-coord <- as.data.frame(mds$points)
-colnames(coord) <- c("Dim1", "Dim2")
-# Consultamos las primeras observaciones
-head(coord)
-
-# Asignamos un color a cada categoría
-colores <- c(
-  "Improve" = "#CAFF70",
-  "No effect" = "#009ACD",
-  "Worsen" = "#B22222"
-)
-
-# Obtenemos los colores de las 736 observaciones
-color_puntos <- colores[
-  as.character(datos_train_imp$efectos)
-]
-
-# Representamos el MDS
-plot(
-  coord$Dim1,
-  coord$Dim2,
-  pch = 19,
-  col = color_puntos,
-  asp = 1,
-  xlab = "Dimensión 1",
-  ylab = "Dimensión 2",
-  main = "MDS en dos dimensiones"
-)
-
-# Añadimos la leyenda
-legend(
-  "topright",
-  legend = names(colores),
-  col = colores,
-  pch = 19,
-  bty = "n",
-  cex = 0.8
-)
-```
-
-Las proximidades entre observaciones: puntos cercanos tienen perfiles
-relativamente similares de acuerdo con Gower, puntos alejados, perfiles
-más distintos.
+Tras analizar estas dimensiones y sus porcentajes acumulados observamos que para conseguir mayor información sería necesario un alto número de dimensiones en cuyo caso no existiría una reducción especialmente buena, por lo que posiblemente sea más adecuado mantener las variables originales.
 
 ```{r}
-# Seleccionamos las variables numéricas originales
-variables_numericas <- datos_mds[
-  , sapply(datos_mds, is.numeric),
-  drop = FALSE
-]
 
-# Calculamos un MDS independiente con tres dimensiones
-mds_cor <- cmdscale(
-  d,
-  k = 3,
-  eig = TRUE
+
+tabla_acumulada <- data.frame(
+  Dimensiones = c("2 dimensiones", "3 dimensiones",
+                  "9 dimensiones", "12 dimensiones",
+                  "20 dimensiones", "26 dimensiones",
+                  "28 dimensiones"),
+  Porcentaje = c(19.72, 26.38, 51.03, 59.02,
+                 73.45, 80.56, 82.40)
 )
 
-# Extraemos las coordenadas
-coord_cor <- as.data.frame(mds_cor$points)
-colnames(coord_cor) <- c("Dim1", "Dim2", "Dim3")
-
-# Calculamos las correlaciones
-round(
-  cor(
-    coord_cor,
-    variables_numericas,
-    use = "pairwise.complete.obs"
-  ),
-  2
-)
-```
-
-La matriz obtenida nos permitirá estudiar qué variables numéricas están
-más relacionadas con cada dimensión:
-
-- Una correlación próxima a **1** indica una relación lineal positiva
-  fuerte.
-
-- Una correlación próxima a **-1** indica una relación lineal negativa
-  fuerte.
-
-- Una correlación próxima a **0** indica que no se aprecia una relación
-  lineal importante.
-
-Por ejemplo, si `ansiedad` presenta una correlación elevada con `Dim1`,
-podríamos decir que las coordenadas de la primera dimensión están
-asociadas con las diferencias en los niveles de ansiedad.
-
-**Importante:** estas correlaciones son una herramienta descriptiva para
-ayudar a interpretar las dimensiones del MDS. No significan que las
-dimensiones se hayan construido exclusivamente a partir de esas
-variables ni que exista una relación causal. Además, solo estudian las
-variables numéricas; las categóricas y ordinales no quedan interpretadas
-mediante esta matriz.
-
-```{r}
-# Seleccionamos tres dimensiones
-k_final <- 3
-
-mds_final <- cmdscale(
-  d,
-  k = k_final,
-  eig = TRUE
+# Mantener el orden de las dimensiones
+tabla_acumulada$Dimensiones <- factor(
+  tabla_acumulada$Dimensiones,
+  levels = rev(tabla_acumulada$Dimensiones)
 )
 
-# Guardamos las coordenadas
-coord <- as.data.frame(mds_final$points)
-
-colnames(coord) <- c("Dim1", "Dim2", "Dim3")
-
-# Consultamos las primeras observaciones
-head(coord)
-
-# Añadimos la variable objetivo
-coord$efectos <- factor(
-  as.character(datos_train_imp$efectos),
-  levels = names(colores)
-)
-
-# Representamos el MDS en tres dimensiones
-plot_ly(
-  data = coord,
-  x = ~Dim1,
-  y = ~Dim2,
-  z = ~Dim3,
-  color = ~efectos,
-  colors = unname(colores),
-  type = "scatter3d",
-  mode = "markers",
-  marker = list(
-    size = 3,
-    opacity = 0.75
+ggplot(tabla_acumulada, aes(x = Porcentaje, y = Dimensiones)) +
+  geom_col(fill = "#269B82", width = 0.6) +
+  geom_text(
+    aes(label = paste0(Porcentaje, "%")),
+    hjust = -0.15,
+    size = 3.8
+  ) +
+  scale_x_continuous(
+    limits = c(0, 100),
+    breaks = seq(0, 100, 10)
+  ) +
+  labs(
+    title = "Información acumulada según el número de dimensiones",
+    x = "Información acumulada (%)",
+    y = NULL
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(
+      hjust = 0.5,
+      face = "bold"
+    ),
+    axis.title.x = element_text(face = "bold"),
+    panel.grid.major.y = element_blank()
   )
-) %>%
-  layout(
-    title = "MDS en tres dimensiones",
-    scene = list(
-      xaxis = list(title = "Dimensión 1"),
-      yaxis = list(title = "Dimensión 2"),
-      zaxis = list(title = "Dimensión 3")
-    )
-  )
+
+
 ```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
